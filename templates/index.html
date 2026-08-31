@@ -4,16 +4,20 @@
 
 {% block content %}
 
+<section class="login-page">
+
 <h1>Homework Submission Portal</h1>
 
-<p>Select Role</p>
+<p class="login-intro">Select Role</p>
 
-<a href="{{ url_for('views.select_role', role='Teacher') }}">
+<a class="role-button" href="{{ url_for('views.select_role', role='Teacher') }}">
     Teacher
 </a>
 
-<a href="{{ url_for('views.select_role', role='Student') }}">
+<a class="role-button" href="{{ url_for('views.select_role', role='Student') }}">
     Student
 </a>
+
+</section>
 
 {% endblock %}

@@ -1,17 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>My Submissions</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
+
+    <section class="app-page student-page submissions-page my-submissions-page">
 
     <h1>My Submissions</h1>
 
     {% if submissions %}
-        <ul>
+        <ul class="submission-list">
             {% for submission in submissions %}
-                <li>
+                <li class="submission-card">
                     <strong>
                         {{ submission.unit_code }}
                         -
@@ -35,7 +33,7 @@
 
                     <br>
 
-                    <a href="{{ url_for(
+                    <a class="button-link" href="{{ url_for(
                         'views.student_submission_details',
                         submission_id=submission.submission_id
                     ) }}">
@@ -48,11 +46,12 @@
         <p>No submissions yet.</p>
     {% endif %}
 
-    <p>
-        <a href="{{ url_for('views.student_home') }}">
+    <p class="page-action">
+        <a class="button-link secondary-link" href="{{ url_for('views.student_home') }}">
             Back to Assessments
         </a>
     </p>
 
-</body>
-</html>
+    </section>
+
+{% endblock %}

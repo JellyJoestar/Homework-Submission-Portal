@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Teacher Assessments</h1>
+<ul>
+    {% if assessments %}
+        {% for assessment in assessments %}
+            <li>
+                {{ assessment.title }} - {{ assessment.status }}
+                {% if assessment.status == "Draft" %}
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'views.delete_assessment',
+                            assessment_id=assessment.assessment_id
+                        ) }}"
+                    >
+                        <button type="submit">
+                            Delete
+                        </button>
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    {% else %}
+        <li>No assessments found.</li>
+    {% endif %}
+</ul>
+{% endblock %}

@@ -1,18 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Teacher Assessments</h1>
+    <form
+        method="GET"
+        action="{{ url_for('views.new_assessment_page') }}"
+    >
+        <button type="submit">
+            Create New Assessment
+        </button>
+    </form>
 <ul>
     {% if assessments %}
         {% for assessment in assessments %}
             <li>
                 {{ assessment.title }} - {{ assessment.status }}
+
+                <a href="{{ url_for(
+                    'views.view_assessment_details',
+                    assessment_id=assessment.assessment_id
+                ) }}">
+                    View
+                </a>
+
                 {% if assessment.status == "Draft" %}
                     <form
                         method="POST"
-                        action="{{ url_for(
-                            'views.delete_assessment',
-                            assessment_id=assessment.assessment_id
-                        ) }}"
+                        action="{{ url_for('views.delete_assessment', assessment_id=assessment.assessment_id) }}"
                     >
                         <button type="submit">
                             Delete

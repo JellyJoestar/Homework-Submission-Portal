@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <h1>Assessment Details</h1>
+
+    <div>
+        <strong>Title:</strong>
+        {{ assessment.title }}
+    </div>
+
+    <div>
+        <strong>Unit:</strong>
+        {{ assessment.unit_code }} - {{ assessment.unit_name }}
+    </div>
+
+    <div>
+        <strong>Description:</strong>
+        {{ assessment.description or "No description" }}
+    </div>
+
+    <div>
+        <strong>Due Date:</strong>
+        {{ assessment.due_date or "Not specified" }}
+    </div>
+
+    <div>
+        <strong>Status:</strong>
+        {{ assessment.status }}
+    </div>
+
+    {% if assessment.status == "Draft" %}
+        <a href="{{ url_for('views.edit_assessment', assessment_id=assessment.assessment_id) }}">
+            Edit
+        </a>
+
+        <form
+            method="POST"
+            action="{{ url_for('views.delete_assessment', assessment_id=assessment.assessment_id) }}"
+        >
+            <button type="submit">
+                Delete
+            </button>
+        </form>
+    {% endif %}
+
+    <a href="{{ url_for('views.teacher_assessments') }}">
+        Back to Assessments
+    </a>
+
+{% endblock %}

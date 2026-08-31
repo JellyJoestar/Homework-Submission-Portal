@@ -1,6 +1,19 @@
+<!-- index.html -->
+
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Homework Submission Portal</h1>
-    <p>Inheritance Test</p>
+
+<h1>Homework Submission Portal</h1>
+
+<p>Select Role</p>
+
+<a href="{{ url_for('views.select_role', role='Teacher') }}">
+    Teacher
+</a>
+
+<a href="{{ url_for('views.select_role', role='Student') }}">
+    Student
+</a>
+
 {% endblock %}

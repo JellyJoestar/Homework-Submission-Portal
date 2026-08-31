@@ -325,6 +325,8 @@ def get_submission_by_id(submission_id, student_id):
             s.original_filename,
             s.stored_filename,
             s.status,
+            s.mark,
+            s.feedback,
             s.submitted_at,
             a.title AS assessment_title,
             u.unit_code,

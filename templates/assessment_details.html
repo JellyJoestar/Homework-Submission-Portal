@@ -60,6 +60,15 @@
         <p>No supporting resources.</p>
     {% endif %}
 
+    <p>
+        <a href="{{ url_for(
+            'views.teacher_assessment_submissions',
+            assessment_id=assessment.assessment_id
+        ) }}">
+            View Student Submissions
+        </a>
+    </p>
+
     {% if assessment.status == "Draft" %}
 
         <h3>Add Supporting Resource</h3>

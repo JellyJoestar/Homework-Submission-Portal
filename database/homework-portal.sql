@@ -8,7 +8,7 @@ CREATE TABLE units (
 
 CREATE TABLE assessments (
     assessment_id INT PRIMARY KEY AUTO_INCREMENT,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(150) NOT NULL,
     description TEXT,
     criteria TEXT,
     due_date DATETIME,

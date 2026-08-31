@@ -33,7 +33,6 @@
         <a href="{{ url_for('views.edit_assessment', assessment_id=assessment.assessment_id) }}">
             Edit
         </a>
-
         <form
             method="POST"
             action="{{ url_for('views.delete_assessment', assessment_id=assessment.assessment_id) }}"
@@ -42,6 +41,37 @@
                 Delete
             </button>
         </form>
+
+        <form
+            method="POST"
+            action="{{ url_for('views.publish_assessment',assessment_id=assessment.assessment_id) }}"
+        >
+            <button type="submit">
+                Publish
+            </button>
+        </form>
+
+    {% elif assessment.status == "Published" %}
+
+        <form
+            method="POST"
+            action="{{ url_for('views.close_assessment', assessment_id=assessment.assessment_id) }}"
+        >
+            <button type="submit">
+                Close Assessment
+            </button>
+        </form>
+
+    {% elif assessment.status == "Closed" %}
+        <form
+            method="POST"
+            action="{{ url_for('views.archive_assessment',assessment_id=assessment.assessment_id) }}"
+        >
+            <button type="submit">
+                Archive Assessment
+            </button>
+        </form>
+
     {% endif %}
 
     <a href="{{ url_for('views.teacher_assessments') }}">

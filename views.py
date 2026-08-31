@@ -13,7 +13,8 @@ from db import (
     create_assessment,
     get_assessment_by_id,
     update_assessment,
-    delete_draft_assessment
+    delete_draft_assessment,
+    update_assessment_status
 )
 
 views = Blueprint("views", __name__)
@@ -146,3 +147,75 @@ def delete_assessment(assessment_id):
         return "Only Draft assessments can be deleted.", 400
     delete_draft_assessment(assessment_id)
     return redirect(url_for("views.teacher_assessments"))
+
+@views.route(
+    "/teacher/assessments/<int:assessment_id>/publish",
+    methods=["POST"]
+)
+def publish_assessment(assessment_id):
+    if not teacher_required():
+        return "Teacher access required.", 403
+
+    assessment = get_assessment_by_id(assessment_id)
+
+    if not assessment:
+        return "Assessment not found!", 404
+
+    if assessment["status"] != "Draft":
+        return "Only Draft assessments can be published.", 400
+
+    update_assessment_status(
+        assessment_id,
+        "Draft",
+        "Published"
+    )
+
+    return redirect(
+        url_for(
+            "views.view_assessment_details",
+            assessment_id=assessment_id
+        )
+    )
+
+
+@views.route(
+    "/teacher/assessments/<int:assessment_id>/close",
+    methods=["POST"]
+)
+def close_assessment(assessment_id):
+    if not teacher_required():
+        return "Teacher access required.", 403
+
+    assessment = get_assessment_by_id(assessment_id)
+
+    if not assessment:
+        return "Assessment not found!", 404
+
+    if assessment["status"] != "Published":
+        return "Only Published assessments can be closed.", 400
+
+    update_assessment_status(
+        assessment_id,
+        "Published",
+        "Closed"
+    )
+
+    return redirect(
+        url_for(
+            "views.view_assessment_details",
+            assessment_id=assessment_id
+        )
+    )
+
+
+@views.route("/teacher/assessments/<int:assessment_id>/archive", methods=["POST"])
+def archive_assessment(assessment_id):
+    if not teacher_required():
+        return "Teacher access required.", 403
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        return "Assessment not found!", 404
+    if assessment["status"] != "Closed":
+        return "Only Closed assessments can be archived.", 400
+    update_assessment_status(assessment_id, "Closed", "Archived")
+    return redirect(url_for("views.view_assessment_details", assessment_id=assessment_id))

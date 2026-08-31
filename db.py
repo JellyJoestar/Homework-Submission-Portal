@@ -127,3 +127,24 @@ def delete_draft_assessment(assessment_id):
     connection.commit()
     cursor.close()
     connection.close()
+
+def update_assessment_status(assessment_id, current_status, new_status):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        UPDATE assessments
+        SET status = %s
+        WHERE assessment_id = %s
+        AND status = %s
+        """,
+        (new_status, assessment_id, current_status)
+    )
+    updated_rows = cursor.rowcount
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return updated_rows

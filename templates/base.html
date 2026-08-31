@@ -6,8 +6,33 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <title>Homework Submission Portal</title>
 </head>
-<body>
-    {% block content %}
-    {% endblock %}   
+<body class="portal-body">
+    <header class="portal-header">
+        <a class="portal-brand" href="{{ url_for('views.home') }}">Homework Submission Portal</a>
+        <span>User | {{ session.get("role", "Portal") }}</span>
+    </header>
+    <aside class="portal-sidebar">
+        <nav aria-label="Portal navigation">
+            {% if session.get("role") == "Teacher" %}
+                <a href="{{ url_for('views.teacher_assessments') }}">Dashboard</a>
+                <a href="{{ url_for('views.new_assessment_page') }}">Create Assessment</a>
+                {% if assessment is defined and assessment.assessment_id is defined %}
+                    <a href="{{ url_for('views.teacher_assessment_submissions', assessment_id=assessment.assessment_id) }}">Submission</a>
+                {% elif submission is defined and submission.assessment_id is defined %}
+                    <a href="{{ url_for('views.teacher_assessment_submissions', assessment_id=submission.assessment_id) }}">Submission</a>
+                {% else %}
+                    <span class="nav-button nav-button-pending">Submission</span>
+                {% endif %}
+            {% elif session.get("role") == "Student" %}
+                <a href="{{ url_for('views.student_home') }}">Dashboard</a>
+                <a href="{{ url_for('views.student_submissions') }}">My Submissions</a>
+                <span class="nav-button nav-button-pending">Results</span>
+            {% endif %}
+        </nav>
+    </aside>
+    <main class="portal-main">
+        {% block content %}
+        {% endblock %}
+    </main>
 </body>
 </html>

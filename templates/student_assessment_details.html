@@ -2,34 +2,36 @@
 
 {% block content %}
 
+<section class="app-page student-page assessment-detail-page student-assessment-detail-page">
+
 <h1>Assessment Details</h1>
 
-<div>
+<div class="detail-row detail-title">
     <strong>Title:</strong>
     {{ assessment.title }}
 </div>
 
-<div>
+<div class="detail-row">
     <strong>Unit:</strong>
     {{ assessment.unit_code }} - {{ assessment.unit_name }}
 </div>
 
-<div>
+<div class="detail-row detail-block">
     <strong>Description:</strong>
     {{ assessment.description or "No description" }}
 </div>
 
-<div>
+<div class="detail-row detail-block">
     <strong>Criteria:</strong>
     {{ assessment.criteria or "Not specified" }}
 </div>
 
-<div>
+<div class="detail-row">
     <strong>Due Date:</strong>
     {{ assessment.due_date or "Not specified" }}
 </div>
 
-<div>
+<div class="detail-row">
     <strong>Status:</strong>
     {{ assessment.status }}
 </div>
@@ -37,12 +39,12 @@
 <h2>Supporting Resources</h2>
 
 {% if resources %}
-    <ul>
+    <ul class="resource-list">
         {% for resource in resources %}
-            <li>
+            <li class="resource-item">
                 {{ resource.original_filename }}
 
-                <a href="{{ url_for(
+                <a class="button-link" href="{{ url_for(
                     'views.student_download_resource',
                     assessment_id=assessment.assessment_id,
                     resource_id=resource.resource_id
@@ -57,12 +59,12 @@
 {% endif %}
     <h2>Submit Assessment</h2>
 
-    <form
+    <form class="submission-upload-form"
         method="POST"
         action="{{ url_for('views.student_submit_assessment', assessment_id=assessment.assessment_id) }}"
         enctype="multipart/form-data"
     >
-        <div>
+        <div class="upload-field">
             <label for="submission_file">Assessment File</label>
 
             <input
@@ -74,20 +76,22 @@
             >
         </div>
 
-        <div>
+        <div class="form-action-row">
             <button type="submit">
                 Submit Assessment
             </button>
         </div>
     </form>
 
-    <p>
-        <a href="{{ url_for('views.student_submissions') }}">
+    <p class="page-action">
+        <a class="button-link" href="{{ url_for('views.student_submissions') }}">
             My Submissions
         </a>
     </p>
-    <a href="{{ url_for('views.student_home') }}">
+    <a class="button-link secondary-link" href="{{ url_for('views.student_home') }}">
         Back to Assessments
     </a>
+
+</section>
 
 {% endblock %}

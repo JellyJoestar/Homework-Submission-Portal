@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
+<section class="app-page teacher-page dashboard-page">
 <h1>Teacher Assessments</h1>
     <form
+        class="primary-page-action"
         method="GET"
         action="{{ url_for('views.new_assessment_page') }}"
     >
@@ -9,33 +11,42 @@
             Create New Assessment
         </button>
     </form>
-<ul>
+<ul class="assessment-board">
     {% if assessments %}
         {% for assessment in assessments %}
-            <li>
-                {{ assessment.title }} - {{ assessment.status }}
+            <li class="assessment-card">
+                <div class="assessment-card-title">
+                    {{ assessment.title }}
+                </div>
 
-                <a href="{{ url_for(
-                    'views.view_assessment_details',
-                    assessment_id=assessment.assessment_id
-                ) }}">
-                    View
-                </a>
+                <div class="assessment-card-footer">
+                    <span class="assessment-status status-{{ assessment.status | lower }}">
+                        {{ assessment.status }}
+                    </span>
 
-                {% if assessment.status == "Draft" %}
-                    <form
-                        method="POST"
-                        action="{{ url_for('views.delete_assessment', assessment_id=assessment.assessment_id) }}"
-                    >
-                        <button type="submit">
-                            Delete
-                        </button>
-                    </form>
-                {% endif %}
+                    <a class="button-link" href="{{ url_for(
+                        'views.view_assessment_details',
+                        assessment_id=assessment.assessment_id
+                    ) }}">
+                        View
+                    </a>
+
+                    {% if assessment.status == "Draft" %}
+                        <form class="inline-form"
+                            method="POST"
+                            action="{{ url_for('views.delete_assessment', assessment_id=assessment.assessment_id) }}"
+                        >
+                            <button type="submit">
+                                Delete
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
             </li>
         {% endfor %}
     {% else %}
         <li>No assessments found.</li>
     {% endif %}
 </ul>
+</section>
 {% endblock %}

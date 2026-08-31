@@ -2,28 +2,34 @@
 
 {% block content %}
 
+<section class="app-page student-page student-dashboard-page">
+
 <h1>Student Assessments</h1>
-<p>
-    <a href="{{ url_for('views.student_submissions') }}">
+<p class="primary-page-action">
+    <a class="button-link" href="{{ url_for('views.student_submissions') }}">
         My Submissions
     </a>
 </p>
 
 {% if assessments %}
-    <ul>
+    <ul class="student-assessment-list">
         {% for assessment in assessments %}
-            <li>
-                <a href="{{ url_for('views.student_assessment_details',assessment_id=assessment.assessment_id) }}">
+            <li class="student-assessment-card">
+                <a class="assessment-title-link" href="{{ url_for('views.student_assessment_details',assessment_id=assessment.assessment_id) }}">
                     {{ assessment.unit_code }} -
                     {{ assessment.title }}
                 </a>
 
-                - {{ assessment.status }}
+                <span class="assessment-status status-{{ assessment.status | lower }}">
+                    {{ assessment.status }}
+                </span>
             </li>
         {% endfor %}
     </ul>
 {% else %}
     <p>No published assessments are currently available.</p>
 {% endif %}
+
+</section>
 
 {% endblock %}

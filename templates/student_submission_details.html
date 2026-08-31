@@ -1,79 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Submission Details</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
+
+    <section class="app-page student-page confirmation-page">
 
     <h1>Submission Details</h1>
 
+    <p class="confirmation-message">Your assessment has been submitted successfully.</p>
 
-    <div>
+    <div class="detail-row">
         <strong>Submission ID:</strong>
         {{ submission.submission_id }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Unit:</strong>
         {{ submission.unit_code }}
         -
         {{ submission.unit_name }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Assessment:</strong>
         {{ submission.assessment_title }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Submitted File:</strong>
         {{ submission.original_filename }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Status:</strong>
         {{ submission.status }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Submitted At:</strong>
         {{ submission.submitted_at }}
     </div>
 
-    <hr>
-
-    <h2>Mark and Feedback</h2>
-
-    <div>
-        <strong>Mark:</strong>
-        {% if submission.mark is not none %}
-            {{ submission.mark }}
-        {% else %}
-            Not yet available
-        {% endif %}
-    </div>
-
-    <div>
-        <strong>Feedback:</strong>
-        {% if submission.feedback %}
-            {{ submission.feedback }}
-        {% else %}
-            Not yet available
-        {% endif %}
-    </div>
-
-    <p>
-        <a href="{{ url_for('views.student_submissions') }}">
+    <p class="page-action">
+        <a class="button-link" href="{{ url_for('views.student_submissions') }}">
             My Submissions
         </a>
     </p>
 
-    <p>
-        <a href="{{ url_for('views.student_home') }}">
+    <p class="page-action">
+        <a class="button-link secondary-link" href="{{ url_for('views.student_home') }}">
             Back to Assessments
         </a>
     </p>
 
-</body>
-</html>
+    </section>
+
+{% endblock %}

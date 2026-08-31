@@ -1,42 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Submission Details</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
+
+    <section class="app-page teacher-page review-submission-page">
 
     <h1>Submission Details</h1>
 
-    <div>
+    <div class="detail-row">
         <strong>Submission ID:</strong>
         {{ submission.submission_id }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Student:</strong>
         {{ submission.student_id }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Unit:</strong>
         {{ submission.unit_code }}
         -
         {{ submission.unit_name }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Assessment:</strong>
         {{ submission.assessment_title }}
     </div>
 
-    <div>
+    <div class="detail-row submitted-file-row">
         <strong>Submitted File:</strong>
         {{ submission.original_filename }}
     </div>
 
-    <p>
-        <a href="{{ url_for(
+    <p class="page-action">
+        <a class="button-link" href="{{ url_for(
             'views.teacher_download_submission',
             submission_id=submission.submission_id
         ) }}">
@@ -44,12 +42,12 @@
         </a>
     </p>
 
-    <div>
+    <div class="detail-row">
         <strong>Status:</strong>
         {{ submission.status }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Submitted At:</strong>
         {{ submission.submitted_at }}
     </div>
@@ -58,11 +56,11 @@
 
     <h2>Mark and Feedback</h2>
 
-    <form
+    <form class="mark-feedback-form"
         method="POST"
         action="{{ url_for('views.teacher_save_mark_feedback', submission_id=submission.submission_id) }}"
     >
-        <div>
+        <div class="form-field mark-field">
             <label for="mark">Mark</label>
 
             <input
@@ -75,7 +73,7 @@
             >
         </div>
 
-        <div>
+        <div class="form-field feedback-field">
             <label for="feedback">Feedback</label>
 
             <textarea
@@ -86,15 +84,15 @@
             >{{ submission.feedback if submission.feedback else '' }}</textarea>
         </div>
 
-        <div>
+        <div class="form-action-row">
             <button type="submit">
                 Save Mark and Feedback
             </button>
         </div>
     </form>
 
-    <p>
-        <a href="{{ url_for(
+    <p class="page-action">
+        <a class="button-link secondary-link" href="{{ url_for(
             'views.teacher_assessment_submissions',
             assessment_id=submission.assessment_id
         ) }}">
@@ -102,5 +100,6 @@
         </a>
     </p>
 
-</body>
-</html>
+    </section>
+
+{% endblock %}

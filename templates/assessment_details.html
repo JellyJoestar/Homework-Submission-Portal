@@ -2,49 +2,51 @@
 
 {% block content %}
 
+    <section class="app-page teacher-page assessment-detail-page">
+
     <h1>Assessment Details</h1>
 
-    <div>
+    <div class="detail-row detail-title">
         <strong>Title:</strong>
         {{ assessment.title }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Unit:</strong>
         {{ assessment.unit_code }} - {{ assessment.unit_name }}
     </div>
 
-    <div>
+    <div class="detail-row detail-block">
         <strong>Description:</strong>
         {{ assessment.description or "No description" }}
     </div>
 
-    <div>
+    <div class="detail-row detail-block">
         <strong>Criteria:</strong>
         {{ assessment.criteria or "Not specified" }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Due Date:</strong>
         {{ assessment.due_date or "Not specified" }}
     </div>
 
-    <div>
+    <div class="detail-row">
         <strong>Status:</strong>
         {{ assessment.status }}
     </div>
 
     <h2>Supporting Resources</h2>
     {% if resources %}
-        <ul>
+        <ul class="resource-list">
             {% for resource in resources %}
-                <li>
+                <li class="resource-item">
                     {{ resource.original_filename }}
-                    <a href="{{ url_for('views.download_assessment_resource', assessment_id=assessment.assessment_id, resource_id=resource.resource_id) }}">
+                    <a class="button-link" href="{{ url_for('views.download_assessment_resource', assessment_id=assessment.assessment_id, resource_id=resource.resource_id) }}">
                         Download
                     </a>
                     {% if assessment.status == "Draft" %}
-                        <form
+                        <form class="inline-form"
                             method="POST"
                             action="{{ url_for('views.delete_resource', assessment_id=assessment.assessment_id, resource_id=resource.resource_id) }}"
                         >
@@ -60,8 +62,8 @@
         <p>No supporting resources.</p>
     {% endif %}
 
-    <p>
-        <a href="{{ url_for(
+    <p class="page-action">
+        <a class="button-link" href="{{ url_for(
             'views.teacher_assessment_submissions',
             assessment_id=assessment.assessment_id
         ) }}">
@@ -73,7 +75,7 @@
 
         <h3>Add Supporting Resource</h3>
 
-        <form
+        <form class="upload-form"
             method="POST"
             enctype="multipart/form-data"
             action="{{ url_for(
@@ -97,10 +99,10 @@
 
 
     {% if assessment.status == "Draft" %}
-        <a href="{{ url_for('views.edit_assessment', assessment_id=assessment.assessment_id) }}">
+        <a class="button-link" href="{{ url_for('views.edit_assessment', assessment_id=assessment.assessment_id) }}">
             Edit
         </a>
-        <form
+        <form class="inline-form"
             method="POST"
             action="{{ url_for('views.delete_assessment', assessment_id=assessment.assessment_id) }}"
         >
@@ -109,7 +111,7 @@
             </button>
         </form>
 
-        <form
+        <form class="inline-form"
             method="POST"
             action="{{ url_for('views.publish_assessment',assessment_id=assessment.assessment_id) }}"
         >
@@ -120,7 +122,7 @@
 
     {% elif assessment.status == "Published" %}
 
-        <form
+        <form class="inline-form"
             method="POST"
             action="{{ url_for('views.close_assessment', assessment_id=assessment.assessment_id) }}"
         >
@@ -130,7 +132,7 @@
         </form>
 
     {% elif assessment.status == "Closed" %}
-        <form
+        <form class="inline-form"
             method="POST"
             action="{{ url_for('views.archive_assessment',assessment_id=assessment.assessment_id) }}"
         >
@@ -141,8 +143,10 @@
 
     {% endif %}
 
-    <a href="{{ url_for('views.teacher_assessments') }}">
+    <a class="button-link secondary-link" href="{{ url_for('views.teacher_assessments') }}">
         Back to Assessments
     </a>
+
+    </section>
 
 {% endblock %}

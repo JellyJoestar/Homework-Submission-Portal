@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Assessment Details</h1>
+
+<div>
+    <strong>Title:</strong>
+    {{ assessment.title }}
+</div>
+
+<div>
+    <strong>Unit:</strong>
+    {{ assessment.unit_code }} - {{ assessment.unit_name }}
+</div>
+
+<div>
+    <strong>Description:</strong>
+    {{ assessment.description or "No description" }}
+</div>
+
+<div>
+    <strong>Due Date:</strong>
+    {{ assessment.due_date or "Not specified" }}
+</div>
+
+<div>
+    <strong>Status:</strong>
+    {{ assessment.status }}
+</div>
+
+<h2>Supporting Resources</h2>
+
+{% if resources %}
+    <ul>
+        {% for resource in resources %}
+            <li>
+                {{ resource.original_filename }}
+
+                <a href="{{ url_for(
+                    'views.student_download_resource',
+                    assessment_id=assessment.assessment_id,
+                    resource_id=resource.resource_id
+                ) }}">
+                    Download
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No supporting resources.</p>
+{% endif %}
+
+<a href="{{ url_for('views.student_home') }}">
+    Back to Assessments
+</a>
+
+{% endblock %}

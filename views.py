@@ -22,7 +22,8 @@ from db import (
     get_resources_by_assessment,
     get_resource_by_id,
     create_assessment_resource,
-    delete_assessment_resource
+    delete_assessment_resource,
+    get_published_assessments
 )
 
 views = Blueprint("views", __name__)
@@ -67,10 +68,34 @@ def allowed_resource_file(filename):
 def student_home():
     if session.get("role") != "Student":
         return "Student access required.", 403
-    return """
-        <h1>Student Home</h1>
-        <p>Student role selected successfully.</p>
-    """
+    assessments = get_published_assessments()
+    return render_template("student_assessments.html",assessments=assessments)
+
+@views.route("/student/assessments/<int:assessment_id>")
+def student_assessment_details(assessment_id):
+    if session.get("role") != "Student":
+        return "Student access required.", 403
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        return "Assessment not found!", 404
+    if assessment["status"] != "Published":
+        return "Assessment is not available to students.", 403
+    resources = get_resources_by_assessment(assessment_id)
+    return render_template("student_assessment_details.html", assessment=assessment, resources=resources)
+
+@views.route("/student/assessments/<int:assessment_id>/resources/" "<int:resource_id>/download")
+def student_download_resource(assessment_id, resource_id):
+    if session.get("role") != "Student":
+        return "Student access required.", 403
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        return "Assessment not found!", 404
+    if assessment["status"] != "Published":
+        return "Assessment is not available to students.", 403
+    resource = get_resource_by_id(resource_id)
+    if (not resource or resource["assessment_id"] != assessment_id):
+        return "Resource not found!", 404
+    return send_from_directory(RESOURCE_UPLOAD_FOLDER, resource["stored_filename"], as_attachment=True, download_name=resource["original_filename"])
 
 @views.route("/teacher/assessments")
 def teacher_assessments():

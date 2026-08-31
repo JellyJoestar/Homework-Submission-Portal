@@ -1,5 +1,6 @@
 import os
 import uuid
+from decimal import Decimal, InvalidOperation
 from flask import (
     Blueprint,
     redirect,
@@ -29,7 +30,8 @@ from db import (
     get_submission_by_id,
     get_submission_by_assessment_and_student,
     get_submissions_by_assessment,
-    get_submission_for_teacher
+    get_submission_for_teacher,
+    update_submission_mark_feedback
 )
 
 views = Blueprint("views", __name__)
@@ -212,6 +214,26 @@ def teacher_submission_details(submission_id):
     if not submission:
         return "Submission not found.", 404
     return render_template("teacher_submission_details.html", submission=submission)
+
+@views.route("/teacher/submissions/<int:submission_id>/mark-feedback",methods=["POST"])
+def teacher_save_mark_feedback(submission_id):
+    if not teacher_required():
+        return "Teacher access required.", 403
+    submission = get_submission_for_teacher(submission_id)
+    if not submission:
+        return "Submission not found.", 404
+    mark_text = (request.form.get("mark") or "").strip()
+    feedback = (request.form.get("feedback") or "").strip()
+    if not mark_text:
+        return "Mark is required.", 400
+    if not feedback:
+        return "Feedback is required.", 400
+    try:
+        mark = Decimal(mark_text)
+    except InvalidOperation:
+        return "Mark must be a valid number.", 400
+    update_submission_mark_feedback(submission_id, mark, feedback)
+    return redirect(url_for("views.teacher_submission_details",submission_id=submission_id))
 
 @views.route("/teacher/submissions/<int:submission_id>/download")
 def teacher_download_submission(submission_id):

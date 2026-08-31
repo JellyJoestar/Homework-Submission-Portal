@@ -37,6 +37,8 @@ CREATE TABLE submissions (
     original_filename VARCHAR(255) NOT NULL,
     stored_filename VARCHAR(255) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'Submitted',
+    mark DECIMAL(5,2) NULL,
+    feedback TEXT NULL,
     submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (assessment_id)

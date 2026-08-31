@@ -388,6 +388,8 @@ def get_submission_for_teacher(submission_id):
             s.original_filename,
             s.stored_filename,
             s.status,
+            s.mark,
+            s.feedback,
             s.submitted_at,
             a.title AS assessment_title,
             a.status AS assessment_status,
@@ -406,6 +408,25 @@ def get_submission_for_teacher(submission_id):
     cursor.close()
     connection.close()
     return submission
+
+def update_submission_mark_feedback(submission_id, mark, feedback):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        UPDATE submissions
+        SET
+            mark = %s,
+            feedback = %s
+        WHERE submission_id = %s
+        """,
+        (mark, feedback, submission_id)
+    )
+    connection.commit()
+    updated_rows = cursor.rowcount
+    cursor.close()
+    connection.close()
+    return updated_rows
 
 def get_submission_by_assessment_and_student(assessment_id, student_id):
     connection = get_db_connection()

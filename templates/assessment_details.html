@@ -29,6 +29,59 @@
         {{ assessment.status }}
     </div>
 
+    <h2>Supporting Resources</h2>
+    {% if resources %}
+        <ul>
+            {% for resource in resources %}
+                <li>
+                    {{ resource.original_filename }}
+                    <a href="{{ url_for('views.download_assessment_resource', assessment_id=assessment.assessment_id, resource_id=resource.resource_id) }}">
+                        Download
+                    </a>
+                    {% if assessment.status == "Draft" %}
+                        <form
+                            method="POST"
+                            action="{{ url_for('views.delete_resource', assessment_id=assessment.assessment_id, resource_id=resource.resource_id) }}"
+                        >
+                            <button type="submit">
+                                Delete Resource
+                            </button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No supporting resources.</p>
+    {% endif %}
+
+    {% if assessment.status == "Draft" %}
+
+        <h3>Add Supporting Resource</h3>
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            action="{{ url_for(
+                'views.upload_assessment_resource',
+                assessment_id=assessment.assessment_id
+            ) }}"
+        >
+            <input
+                type="file"
+                name="resource"
+                accept=".pdf,.docx"
+                required
+            >
+
+            <button type="submit">
+                Upload Resource
+            </button>
+        </form>
+
+    {% endif %}
+
+
     {% if assessment.status == "Draft" %}
         <a href="{{ url_for('views.edit_assessment', assessment_id=assessment.assessment_id) }}">
             Edit

@@ -10,6 +10,7 @@ load_dotenv()
 app = Flask(__name__)
 
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 app.register_blueprint(views)
 

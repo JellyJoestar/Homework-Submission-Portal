@@ -30,5 +30,21 @@ CREATE TABLE assessment_resources (
         ON DELETE CASCADE
 );
 
+CREATE TABLE submissions (
+    submission_id INT PRIMARY KEY AUTO_INCREMENT,
+    assessment_id INT NOT NULL,
+    student_id VARCHAR(100) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    stored_filename VARCHAR(255) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'Submitted',
+    submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (assessment_id)
+        REFERENCES assessments(assessment_id)
+        ON DELETE CASCADE,
+
+    UNIQUE (assessment_id, student_id)
+);
+
 INSERT INTO units (unit_code, unit_name)
 VALUES ('IFN636', 'Software Life Cycle Management');

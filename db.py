@@ -345,6 +345,68 @@ def get_submission_by_id(submission_id, student_id):
     connection.close()
     return submission
 
+def get_submissions_by_assessment(assessment_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            s.submission_id,
+            s.assessment_id,
+            s.student_id,
+            s.original_filename,
+            s.stored_filename,
+            s.status,
+            s.submitted_at,
+            a.title AS assessment_title,
+            u.unit_code,
+            u.unit_name
+        FROM submissions s
+        JOIN assessments a
+            ON s.assessment_id = a.assessment_id
+        JOIN units u
+            ON a.unit_id = u.unit_id
+        WHERE s.assessment_id = %s
+        ORDER BY s.submitted_at DESC
+        """,
+        (assessment_id,)
+    )
+    submissions = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return submissions
+
+def get_submission_for_teacher(submission_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            s.submission_id,
+            s.assessment_id,
+            s.student_id,
+            s.original_filename,
+            s.stored_filename,
+            s.status,
+            s.submitted_at,
+            a.title AS assessment_title,
+            a.status AS assessment_status,
+            u.unit_code,
+            u.unit_name
+        FROM submissions s
+        JOIN assessments a
+            ON s.assessment_id = a.assessment_id
+        JOIN units u
+            ON a.unit_id = u.unit_id
+        WHERE s.submission_id = %s
+        """,
+        (submission_id,)
+    )
+    submission = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return submission
+
 def get_submission_by_assessment_and_student(assessment_id, student_id):
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)

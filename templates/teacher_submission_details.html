@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Submission Details</title>
+</head>
+<body>
+
+    <h1>Submission Details</h1>
+
+    <div>
+        <strong>Submission ID:</strong>
+        {{ submission.submission_id }}
+    </div>
+
+    <div>
+        <strong>Student:</strong>
+        {{ submission.student_id }}
+    </div>
+
+    <div>
+        <strong>Unit:</strong>
+        {{ submission.unit_code }}
+        -
+        {{ submission.unit_name }}
+    </div>
+
+    <div>
+        <strong>Assessment:</strong>
+        {{ submission.assessment_title }}
+    </div>
+
+    <div>
+        <strong>Submitted File:</strong>
+        {{ submission.original_filename }}
+    </div>
+
+    <p>
+        <a href="{{ url_for(
+            'views.teacher_download_submission',
+            submission_id=submission.submission_id
+        ) }}">
+            Download Submitted File
+        </a>
+    </p>
+
+    <div>
+        <strong>Status:</strong>
+        {{ submission.status }}
+    </div>
+
+    <div>
+        <strong>Submitted At:</strong>
+        {{ submission.submitted_at }}
+    </div>
+
+    <p>
+        <a href="{{ url_for(
+            'views.teacher_assessment_submissions',
+            assessment_id=submission.assessment_id
+        ) }}">
+            Back to Submissions
+        </a>
+    </p>
+
+</body>
+</html>

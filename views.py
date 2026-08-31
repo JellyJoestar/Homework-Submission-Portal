@@ -28,6 +28,8 @@ from db import (
     get_submissions_by_student,
     get_submission_by_id,
     get_submission_by_assessment_and_student,
+    get_submissions_by_assessment,
+    get_submission_for_teacher
 )
 
 views = Blueprint("views", __name__)
@@ -192,6 +194,33 @@ def view_assessment_details(assessment_id):
     resources = get_resources_by_assessment(assessment_id)
     return render_template("assessment_details.html", assessment=assessment, resources=resources)
 
+@views.route("/teacher/assessments/<int:assessment_id>/submissions")
+def teacher_assessment_submissions(assessment_id):
+    if not teacher_required():
+        return "Teacher access required.", 403
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        return "Assessment not found.", 404
+    submissions = get_submissions_by_assessment(assessment_id)
+    return render_template("teacher_submissions.html", assessment=assessment, submissions=submissions)
+
+@views.route("/teacher/submissions/<int:submission_id>")
+def teacher_submission_details(submission_id):
+    if not teacher_required():
+        return "Teacher access required.", 403
+    submission = get_submission_for_teacher(submission_id)
+    if not submission:
+        return "Submission not found.", 404
+    return render_template("teacher_submission_details.html", submission=submission)
+
+@views.route("/teacher/submissions/<int:submission_id>/download")
+def teacher_download_submission(submission_id):
+    if not teacher_required():
+        return "Teacher access required.", 403
+    submission = get_submission_for_teacher(submission_id)
+    if not submission:
+        return "Submission not found.", 404
+    return send_from_directory(SUBMISSION_UPLOAD_FOLDER, submission["stored_filename"], as_attachment=True, download_name=submission["original_filename"])
 
 @views.route("/teacher/assessments/new", methods=["GET"])
 def new_assessment_page():

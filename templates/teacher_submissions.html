@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Submissions</title>
+</head>
+<body>
+
+    <h1>Student Submissions</h1>
+
+    <div>
+        <strong>Assessment:</strong>
+        {{ assessment.title }}
+    </div>
+
+    <div>
+        <strong>Unit:</strong>
+        {{ assessment.unit_code }}
+        -
+        {{ assessment.unit_name }}
+    </div>
+
+    <hr>
+
+    {% if submissions %}
+        <ul>
+            {% for submission in submissions %}
+                <li>
+                    <strong>Student:</strong>
+                    {{ submission.student_id }}
+
+                    <br>
+
+                    <strong>Submitted File:</strong>
+                    {{ submission.original_filename }}
+
+                    <br>
+
+                    <strong>Status:</strong>
+                    {{ submission.status }}
+
+                    <br>
+
+                    <strong>Submitted At:</strong>
+                    {{ submission.submitted_at }}
+
+                    <br>
+
+                    <a href="{{ url_for(
+                        'views.teacher_submission_details',
+                        submission_id=submission.submission_id
+                    ) }}">
+                        View Submission
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No student submissions yet.</p>
+    {% endif %}
+
+    <p>
+        <a href="{{ url_for(
+            'views.view_assessment_details',
+            assessment_id=assessment.assessment_id
+        ) }}">
+            Back to Assessment
+        </a>
+    </p>
+
+</body>
+</html>

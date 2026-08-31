@@ -48,6 +48,7 @@ def get_assessment_by_id(assessment_id):
             a.assessment_id,
             a.title,
             a.description,
+            a.criteria,
             a.due_date,
             a.status,
             a.unit_id,
@@ -74,6 +75,7 @@ def get_published_assessments():
             a.assessment_id,
             a.title,
             a.description,
+            a.criteria,
             a.due_date,
             a.status,
             a.unit_id,
@@ -109,31 +111,31 @@ def get_all_units():
     connection.close()
     return units
 
-def create_assessment(title, description, due_date, unit_id):
+def create_assessment(title, description, criteria, due_date, unit_id):
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(
         """
-        INSERT INTO assessments (title, description, due_date, unit_id)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO assessments (title, description, criteria, due_date, unit_id)
+        VALUES (%s, %s, %s, %s, %s)
         """,
-        (title, description, due_date, unit_id)
+        (title, description, criteria, due_date, unit_id)
     )
     connection.commit()
     cursor.close()
     connection.close()
 
-def update_assessment(assessment_id, title, description, due_date, unit_id):
+def update_assessment(assessment_id, title, description, criteria, due_date, unit_id):
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(
         """
         UPDATE assessments
-        SET title = %s, description = %s, due_date = %s, unit_id = %s
+        SET title = %s, description = %s, criteria = %s, due_date = %s, unit_id = %s
         WHERE assessment_id = %s
         AND status = 'Draft'
         """,
-        (title, description, due_date, unit_id, assessment_id)
+        (title, description, criteria, due_date, unit_id, assessment_id)
     )
     connection.commit()
     cursor.close()

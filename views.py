@@ -130,6 +130,7 @@ def create_new_assessment():
         return "Teacher access required.", 403
     title = (request.form.get("title") or "").strip()
     description = (request.form.get("description") or "").strip()
+    criteria = (request.form.get("criteria") or "").strip()
     due_date_raw = request.form.get("due_date") or ""
     unit_id_raw = request.form.get("unit_id")
     if not title:
@@ -150,7 +151,7 @@ def create_new_assessment():
             return "Invalid due date!", 400
     else:
         due_date = None
-    create_assessment(title, description, due_date, unit_id)
+    create_assessment(title, description, criteria, due_date, unit_id)
     return redirect(url_for("views.teacher_assessments"))
 
 @views.route("/teacher/assessments/<int:assessment_id>/edit", methods=["GET", "POST"])
@@ -166,6 +167,7 @@ def edit_assessment(assessment_id):
     if request.method == "POST":
         title = (request.form.get("title") or "").strip()
         description = (request.form.get("description") or "").strip()
+        criteria = (request.form.get("criteria") or "").strip()
         due_date_raw = request.form.get("due_date") or ""
         unit_id_raw = request.form.get("unit_id")
         if not title:
@@ -184,7 +186,7 @@ def edit_assessment(assessment_id):
                 return "Invalid due date!", 400
         else:
             due_date = None
-        update_assessment(assessment_id, title, description, due_date, unit_id)
+        update_assessment(assessment_id, title, description, criteria, due_date, unit_id)
         return redirect(url_for("views.teacher_assessments"))
     return render_template("edit_assessment.html", assessment=assessment, units=units)
 

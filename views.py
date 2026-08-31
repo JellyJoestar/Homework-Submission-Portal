@@ -23,7 +23,11 @@ from db import (
     get_resource_by_id,
     create_assessment_resource,
     delete_assessment_resource,
-    get_published_assessments
+    get_published_assessments,
+    create_submission,
+    get_submissions_by_student,
+    get_submission_by_id,
+    get_submission_by_assessment_and_student,
 )
 
 views = Blueprint("views", __name__)
@@ -43,6 +47,21 @@ os.makedirs(
     exist_ok=True
 )
 
+SUBMISSION_UPLOAD_FOLDER = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "uploads",
+    "submissions"
+)
+
+ALLOWED_SUBMISSION_EXTENSIONS = {"pdf", "docx"}
+
+def allowed_submission_file(filename):
+    return (
+        "." in filename
+        and filename.rsplit(".", 1)[1].lower()
+        in ALLOWED_SUBMISSION_EXTENSIONS
+    )
+
 @views.route("/")
 def home():
     return render_template("index.html")
@@ -54,6 +73,10 @@ def select_role(role):
     if role not in valid_roles:
         return "Invalid role!", 400
     session["role"] = role
+    if role == "Student":
+        session["student_id"] = "student-demo-001"
+    else:
+        session.pop("student_id", None)
     if role == "Teacher":
         return redirect(url_for("views.teacher_assessments"))
     return redirect(url_for("views.student_home"))
@@ -82,6 +105,60 @@ def student_assessment_details(assessment_id):
         return "Assessment is not available to students.", 403
     resources = get_resources_by_assessment(assessment_id)
     return render_template("student_assessment_details.html", assessment=assessment, resources=resources)
+
+@views.route("/student/assessments/<int:assessment_id>/submit",methods=["POST"])
+def student_submit_assessment(assessment_id):
+    if session.get("role") != "Student":
+        return "Student access required.", 403
+    student_id = session.get("student_id")
+    if not student_id:
+        return "Student session required.", 403
+    assessment = get_assessment_by_id(assessment_id)
+    if not assessment:
+        return "Assessment not found.", 404
+    if assessment["status"] != "Published":
+        return "Submissions are only available for published assessments.", 403
+    existing_submission = get_submission_by_assessment_and_student(assessment_id, student_id)
+    if existing_submission:
+        return "You have already submitted this assessment.", 400
+    if "submission_file" not in request.files:
+        return "No submission file provided.", 400
+    file = request.files["submission_file"]
+    if not file or file.filename == "":
+        return "No submission file selected.", 400
+    if not allowed_submission_file(file.filename):
+        return "Only PDF and DOCX submission files are allowed.", 400
+    original_filename = secure_filename(file.filename)
+    if not original_filename:
+        return "Invalid submission filename.", 400
+    extension = original_filename.rsplit(".", 1)[1].lower()
+    stored_filename = f"{uuid.uuid4().hex}.{extension}"
+    os.makedirs(SUBMISSION_UPLOAD_FOLDER,exist_ok=True)
+    file.save(os.path.join(SUBMISSION_UPLOAD_FOLDER,stored_filename))
+    submission_id = create_submission(assessment_id, student_id, original_filename, stored_filename)
+    return redirect(url_for("views.student_submission_details", submission_id=submission_id))
+
+@views.route("/student/submissions")
+def student_submissions():
+    if session.get("role") != "Student":
+        return "Student access required.", 403
+    student_id = session.get("student_id")
+    if not student_id:
+        return "Student session required.", 403
+    submissions = get_submissions_by_student(student_id)
+    return render_template("student_submissions.html",submissions=submissions)
+
+@views.route("/student/submissions/<int:submission_id>")
+def student_submission_details(submission_id):
+    if session.get("role") != "Student":
+        return "Student access required.", 403
+    student_id = session.get("student_id")
+    if not student_id:
+        return "Student session required.", 403
+    submission = get_submission_by_id(submission_id, student_id)
+    if not submission:
+        return "Submission not found.", 404
+    return render_template("student_submission_details.html",submission=submission)
 
 @views.route("/student/assessments/<int:assessment_id>/resources/" "<int:resource_id>/download")
 def student_download_resource(assessment_id, resource_id):

@@ -255,7 +255,117 @@ def delete_assessment_resource(resource_id, assessment_id):
         """,
         (resource_id, assessment_id)
     )
-
     connection.commit()
     cursor.close()
     connection.close()
+
+def create_submission(assessment_id, student_id, original_filename, stored_filename):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO submissions (
+            assessment_id,
+            student_id,
+            original_filename,
+            stored_filename
+        )
+        VALUES (%s, %s, %s, %s)
+        """,
+        (assessment_id, student_id, original_filename, stored_filename)
+    )
+
+    submission_id = cursor.lastrowid
+    connection.commit()
+    cursor.close()
+    connection.close()
+    return submission_id
+
+def get_submissions_by_student(student_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            s.submission_id,
+            s.assessment_id,
+            s.student_id,
+            s.original_filename,
+            s.stored_filename,
+            s.status,
+            s.submitted_at,
+            a.title AS assessment_title,
+            u.unit_code,
+            u.unit_name
+        FROM submissions s
+        JOIN assessments a
+            ON s.assessment_id = a.assessment_id
+        JOIN units u
+            ON a.unit_id = u.unit_id
+        WHERE s.student_id = %s
+        ORDER BY s.submitted_at DESC
+        """,
+        (student_id,)
+    )
+
+    submissions = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return submissions
+
+def get_submission_by_id(submission_id, student_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            s.submission_id,
+            s.assessment_id,
+            s.student_id,
+            s.original_filename,
+            s.stored_filename,
+            s.status,
+            s.submitted_at,
+            a.title AS assessment_title,
+            u.unit_code,
+            u.unit_name
+        FROM submissions s
+        JOIN assessments a
+            ON s.assessment_id = a.assessment_id
+        JOIN units u
+            ON a.unit_id = u.unit_id
+        WHERE s.submission_id = %s
+        AND s.student_id = %s
+        """,
+        (submission_id, student_id)
+    )
+
+    submission = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return submission
+
+def get_submission_by_assessment_and_student(assessment_id, student_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            submission_id,
+            assessment_id,
+            student_id,
+            original_filename,
+            stored_filename,
+            status,
+            submitted_at
+        FROM submissions
+        WHERE assessment_id = %s
+        AND student_id = %s
+        """,
+        (assessment_id, student_id)
+    )
+
+    submission = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return submission

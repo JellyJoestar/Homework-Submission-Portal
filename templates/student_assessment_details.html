@@ -55,9 +55,39 @@
 {% else %}
     <p>No supporting resources.</p>
 {% endif %}
+    <h2>Submit Assessment</h2>
 
-<a href="{{ url_for('views.student_home') }}">
-    Back to Assessments
-</a>
+    <form
+        method="POST"
+        action="{{ url_for('views.student_submit_assessment', assessment_id=assessment.assessment_id) }}"
+        enctype="multipart/form-data"
+    >
+        <div>
+            <label for="submission_file">Assessment File</label>
+
+            <input
+                type="file"
+                id="submission_file"
+                name="submission_file"
+                accept=".pdf,.docx"
+                required
+            >
+        </div>
+
+        <div>
+            <button type="submit">
+                Submit Assessment
+            </button>
+        </div>
+    </form>
+
+    <p>
+        <a href="{{ url_for('views.student_submissions') }}">
+            My Submissions
+        </a>
+    </p>
+    <a href="{{ url_for('views.student_home') }}">
+        Back to Assessments
+    </a>
 
 {% endblock %}

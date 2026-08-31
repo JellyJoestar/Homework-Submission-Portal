@@ -24,6 +24,17 @@
             >{{ assessment.description }}</textarea>
         </div>
         <div>
+            <label for="criteria">
+                Assessment Criteria
+            </label>
+
+            <textarea
+                id="criteria"
+                name="criteria"
+                rows="4"
+            >{{ assessment.criteria or "" }}</textarea>
+        </div>
+        <div>
             <label for="due_date">Due Date</label>
             <input
                 type="datetime-local"

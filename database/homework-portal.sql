@@ -8,12 +8,12 @@ CREATE TABLE units (
 
 CREATE TABLE assessments (
     assessment_id INT PRIMARY KEY AUTO_INCREMENT,
-    title VARCHAR(150) NOT NULL,
+    title VARCHAR(255) NOT NULL,
     description TEXT,
-    due_date DATETIME NULL,
+    criteria TEXT,
+    due_date DATETIME,
     unit_id INT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'Draft',
-
     FOREIGN KEY (unit_id)
         REFERENCES units(unit_id)
 );

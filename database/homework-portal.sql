@@ -18,5 +18,17 @@ CREATE TABLE assessments (
         REFERENCES units(unit_id)
 );
 
+CREATE TABLE assessment_resources (
+    resource_id INT PRIMARY KEY AUTO_INCREMENT,
+    assessment_id INT NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    stored_filename VARCHAR(255) NOT NULL,
+    uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (assessment_id)
+        REFERENCES assessments(assessment_id)
+        ON DELETE CASCADE
+);
+
 INSERT INTO units (unit_code, unit_name)
 VALUES ('IFN636', 'Software Life Cycle Management');

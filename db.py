@@ -148,3 +148,86 @@ def update_assessment_status(assessment_id, current_status, new_status):
     connection.close()
 
     return updated_rows
+
+def get_resources_by_assessment(assessment_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            resource_id,
+            assessment_id,
+            original_filename,
+            stored_filename,
+            uploaded_at
+        FROM assessment_resources
+        WHERE assessment_id = %s
+        ORDER BY uploaded_at
+        """,
+        (assessment_id,)
+    )
+    resources = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return resources
+
+
+def get_resource_by_id(resource_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT
+            resource_id,
+            assessment_id,
+            original_filename,
+            stored_filename,
+            uploaded_at
+        FROM assessment_resources
+        WHERE resource_id = %s
+        """,
+        (resource_id,)
+    )
+
+    resource = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return resource
+
+
+def create_assessment_resource(assessment_id, original_filename, stored_filename):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO assessment_resources (
+            assessment_id,
+            original_filename,
+            stored_filename
+        )
+        VALUES (%s, %s, %s)
+        """,
+        (assessment_id, original_filename, stored_filename)
+    )
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def delete_assessment_resource(resource_id, assessment_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        DELETE FROM assessment_resources
+        WHERE resource_id = %s
+        AND assessment_id = %s
+        """,
+        (resource_id, assessment_id)
+    )
+
+    connection.commit()
+    cursor.close()
+    connection.close()

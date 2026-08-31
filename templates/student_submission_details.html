@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Submission Confirmation</title>
+    <title>Submission Details</title>
 </head>
 <body>
 
-    <h1>Submission Confirmation</h1>
+    <h1>Submission Details</h1>
 
-    <p>Your assessment has been submitted successfully.</p>
 
     <div>
         <strong>Submission ID:</strong>
@@ -40,6 +39,28 @@
     <div>
         <strong>Submitted At:</strong>
         {{ submission.submitted_at }}
+    </div>
+
+    <hr>
+
+    <h2>Mark and Feedback</h2>
+
+    <div>
+        <strong>Mark:</strong>
+        {% if submission.mark is not none %}
+            {{ submission.mark }}
+        {% else %}
+            Not yet available
+        {% endif %}
+    </div>
+
+    <div>
+        <strong>Feedback:</strong>
+        {% if submission.feedback %}
+            {{ submission.feedback }}
+        {% else %}
+            Not yet available
+        {% endif %}
     </div>
 
     <p>

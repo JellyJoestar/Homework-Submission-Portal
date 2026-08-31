@@ -65,6 +65,32 @@ def get_assessment_by_id(assessment_id):
     connection.close()
     return assessment
 
+def get_published_assessments():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            a.assessment_id,
+            a.title,
+            a.description,
+            a.due_date,
+            a.status,
+            a.unit_id,
+            u.unit_code,
+            u.unit_name
+        FROM assessments a
+        JOIN units u
+            ON a.unit_id = u.unit_id
+        WHERE a.status = 'Published'
+        ORDER BY a.assessment_id DESC
+        """
+    )
+    assessments = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return assessments
+
 def get_all_units():
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)

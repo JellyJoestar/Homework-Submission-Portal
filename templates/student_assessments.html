@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Student Assessments</h1>
+
+{% if assessments %}
+    <ul>
+        {% for assessment in assessments %}
+            <li>
+                <a href="{{ url_for('views.student_assessment_details',assessment_id=assessment.assessment_id) }}">
+                    {{ assessment.unit_code }} -
+                    {{ assessment.title }}
+                </a>
+
+                - {{ assessment.status }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No published assessments are currently available.</p>
+{% endif %}
+
+{% endblock %}

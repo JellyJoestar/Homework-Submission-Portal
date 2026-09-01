@@ -152,6 +152,16 @@ def student_submissions():
     submissions = get_submissions_by_student(student_id)
     return render_template("student_submissions.html",submissions=submissions)
 
+@views.route("/student/results")
+def student_results():
+    if session.get("role") != "Student":
+        return "Student access required.", 403
+    student_id = session.get("student_id")
+    if not student_id:
+        return "Student session required.", 403
+    results = get_submissions_by_student(student_id)
+    return render_template("student_results.html", results=results)
+
 @views.route("/student/submissions/<int:submission_id>")
 def student_submission_details(submission_id):
     if session.get("role") != "Student":

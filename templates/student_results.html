@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="app-page student-page results-page">
+
+    <h1>Student Results</h1>
+
+    {% if results %}
+        <ul class="result-list">
+            {% for result in results %}
+                <li class="result-card">
+                    <div class="result-card-header">
+                        <div>
+                            <p class="result-unit">{{ result.unit_code }} - {{ result.unit_name }}</p>
+                            <h2>{{ result.assessment_title }}</h2>
+                            <p class="result-submitted">Submitted {{ result.submitted_at }}</p>
+                        </div>
+
+                        {% if result.mark is not none %}
+                            <span class="assessment-status status-marked">Marked</span>
+                        {% else %}
+                            <span class="assessment-status status-pending">Pending</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="result-content">
+                        <div class="result-field result-mark">
+                            <span class="result-label">Mark</span>
+                            {% if result.mark is not none %}
+                                <strong>{{ result.mark }}</strong>
+                            {% else %}
+                                <strong>Pending</strong>
+                            {% endif %}
+                        </div>
+
+                        <div class="result-field result-feedback">
+                            <span class="result-label">Feedback</span>
+                            {% if result.feedback %}
+                                <p>{{ result.feedback }}</p>
+                            {% else %}
+                                <p>Feedback has not been provided yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="result-empty">No submission results are currently available.</p>
+    {% endif %}
+
+</section>
+
+{% endblock %}

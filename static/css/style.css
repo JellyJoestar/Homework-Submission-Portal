@@ -408,6 +408,18 @@ input[type="file"]::file-selector-button {
     background: #e9eef3;
 }
 
+.assessment-status.status-marked {
+    border-color: #4f8a5b;
+    color: #275d34;
+    background: #e5f4e8;
+}
+
+.assessment-status.status-pending {
+    border-color: #c28b00;
+    color: #6b4b00;
+    background: #fff4ce;
+}
+
 .assessment-card-footer > .button-link {
     display: inline-flex;
     min-height: 36px;
@@ -621,6 +633,102 @@ input[type="file"]::file-selector-button {
     padding: 7px 16px;
 }
 
+/* Student results */
+
+.results-page > h1 {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+}
+
+.result-list {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.result-card {
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.result-card-header {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.result-card-header h2 {
+    margin: 0;
+    font-size: 1.08rem;
+}
+
+.result-unit,
+.result-submitted {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.result-unit {
+    margin-bottom: 5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.result-submitted {
+    margin: 7px 0 0;
+}
+
+.result-content {
+    display: grid;
+    grid-template-columns: minmax(150px, 0.28fr) minmax(280px, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+}
+
+.result-field {
+    min-height: 112px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-soft);
+}
+
+.result-label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.result-mark strong {
+    font-size: 1.6rem;
+}
+
+.result-feedback p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.result-empty {
+    padding: 24px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius);
+    color: var(--muted);
+    background: var(--surface-soft);
+}
+
 .submitted-file-row {
     margin-top: 8px;
     padding: 14px;
@@ -774,11 +882,16 @@ input[type="file"]::file-selector-button {
     }
 
     .student-assessment-card,
+    .result-card-header,
     .resource-item,
     .upload-form,
     .detail-row {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .result-content {
+        grid-template-columns: 1fr;
     }
 
     .detail-row strong {

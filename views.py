@@ -7,9 +7,9 @@ from flask import (
     render_template,
     request,
     send_from_directory,
-    session,
     url_for
 )
+from flask_login import current_user
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from db import (
@@ -33,6 +33,8 @@ from db import (
     get_submission_for_teacher,
     update_submission_mark_feedback
 )
+from auth import redirect_for_role
+from decorators import student_required, teacher_required
 
 views = Blueprint("views", __name__)
 RESOURCE_UPLOAD_FOLDER = os.path.join(
@@ -68,40 +70,22 @@ def allowed_submission_file(filename):
 
 @views.route("/")
 def home():
-    return render_template("index.html")
-
-
-@views.route("/select-role/<role>")
-def select_role(role):
-    valid_roles = ["Teacher", "Student"]
-    if role not in valid_roles:
-        return "Invalid role!", 400
-    session["role"] = role
-    if role == "Student":
-        session["student_id"] = "student-demo-001"
-    else:
-        session.pop("student_id", None)
-    if role == "Teacher":
-        return redirect(url_for("views.teacher_assessments"))
-    return redirect(url_for("views.student_home"))
-
-def teacher_required():
-    return session.get("role") == "Teacher"
+    if current_user.is_authenticated:
+        return redirect_for_role(current_user)
+    return redirect(url_for("auth.login"))
 
 def allowed_resource_file(filename):
     return ("." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_RESOURCE_EXTENSIONS)
 
 @views.route("/student")
+@student_required
 def student_home():
-    if session.get("role") != "Student":
-        return "Student access required.", 403
     assessments = get_published_assessments()
     return render_template("student_assessments.html",assessments=assessments)
 
 @views.route("/student/assessments/<int:assessment_id>")
+@student_required
 def student_assessment_details(assessment_id):
-    if session.get("role") != "Student":
-        return "Student access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -111,12 +95,9 @@ def student_assessment_details(assessment_id):
     return render_template("student_assessment_details.html", assessment=assessment, resources=resources)
 
 @views.route("/student/assessments/<int:assessment_id>/submit",methods=["POST"])
+@student_required
 def student_submit_assessment(assessment_id):
-    if session.get("role") != "Student":
-        return "Student access required.", 403
-    student_id = session.get("student_id")
-    if not student_id:
-        return "Student session required.", 403
+    student_id = current_user.id
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found.", 404
@@ -143,41 +124,31 @@ def student_submit_assessment(assessment_id):
     return redirect(url_for("views.student_submission_details", submission_id=submission_id))
 
 @views.route("/student/submissions")
+@student_required
 def student_submissions():
-    if session.get("role") != "Student":
-        return "Student access required.", 403
-    student_id = session.get("student_id")
-    if not student_id:
-        return "Student session required.", 403
+    student_id = current_user.id
     submissions = get_submissions_by_student(student_id)
     return render_template("student_submissions.html",submissions=submissions)
 
 @views.route("/student/results")
+@student_required
 def student_results():
-    if session.get("role") != "Student":
-        return "Student access required.", 403
-    student_id = session.get("student_id")
-    if not student_id:
-        return "Student session required.", 403
+    student_id = current_user.id
     results = get_submissions_by_student(student_id)
     return render_template("student_results.html", results=results)
 
 @views.route("/student/submissions/<int:submission_id>")
+@student_required
 def student_submission_details(submission_id):
-    if session.get("role") != "Student":
-        return "Student access required.", 403
-    student_id = session.get("student_id")
-    if not student_id:
-        return "Student session required.", 403
+    student_id = current_user.id
     submission = get_submission_by_id(submission_id, student_id)
     if not submission:
         return "Submission not found.", 404
     return render_template("student_submission_details.html",submission=submission)
 
 @views.route("/student/assessments/<int:assessment_id>/resources/" "<int:resource_id>/download")
+@student_required
 def student_download_resource(assessment_id, resource_id):
-    if session.get("role") != "Student":
-        return "Student access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -189,17 +160,15 @@ def student_download_resource(assessment_id, resource_id):
     return send_from_directory(RESOURCE_UPLOAD_FOLDER, resource["stored_filename"], as_attachment=True, download_name=resource["original_filename"])
 
 @views.route("/teacher/assessments")
+@teacher_required
 def teacher_assessments():
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessments = get_all_assessments()
     return render_template("teacher_assessments.html", assessments=assessments)
 
 
 @views.route("/teacher/assessments/<int:assessment_id>")
+@teacher_required
 def view_assessment_details(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -207,9 +176,8 @@ def view_assessment_details(assessment_id):
     return render_template("assessment_details.html", assessment=assessment, resources=resources)
 
 @views.route("/teacher/assessments/<int:assessment_id>/submissions")
+@teacher_required
 def teacher_assessment_submissions(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found.", 404
@@ -217,18 +185,16 @@ def teacher_assessment_submissions(assessment_id):
     return render_template("teacher_submissions.html", assessment=assessment, submissions=submissions)
 
 @views.route("/teacher/submissions/<int:submission_id>")
+@teacher_required
 def teacher_submission_details(submission_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     submission = get_submission_for_teacher(submission_id)
     if not submission:
         return "Submission not found.", 404
     return render_template("teacher_submission_details.html", submission=submission)
 
 @views.route("/teacher/submissions/<int:submission_id>/mark-feedback",methods=["POST"])
+@teacher_required
 def teacher_save_mark_feedback(submission_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     submission = get_submission_for_teacher(submission_id)
     if not submission:
         return "Submission not found.", 404
@@ -246,26 +212,23 @@ def teacher_save_mark_feedback(submission_id):
     return redirect(url_for("views.teacher_submission_details",submission_id=submission_id))
 
 @views.route("/teacher/submissions/<int:submission_id>/download")
+@teacher_required
 def teacher_download_submission(submission_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     submission = get_submission_for_teacher(submission_id)
     if not submission:
         return "Submission not found.", 404
     return send_from_directory(SUBMISSION_UPLOAD_FOLDER, submission["stored_filename"], as_attachment=True, download_name=submission["original_filename"])
 
 @views.route("/teacher/assessments/new", methods=["GET"])
+@teacher_required
 def new_assessment_page():
-    if not teacher_required():
-        return "Teacher access required.", 403
     units = get_all_units()
     return render_template("create_assessment.html", units=units)
 
 
 @views.route("/teacher/assessments", methods=["POST"])
+@teacher_required
 def create_new_assessment():
-    if not teacher_required():
-        return "Teacher access required.", 403
     title = (request.form.get("title") or "").strip()
     description = (request.form.get("description") or "").strip()
     criteria = (request.form.get("criteria") or "").strip()
@@ -293,9 +256,8 @@ def create_new_assessment():
     return redirect(url_for("views.teacher_assessments"))
 
 @views.route("/teacher/assessments/<int:assessment_id>/edit", methods=["GET", "POST"])
+@teacher_required
 def edit_assessment(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -329,9 +291,8 @@ def edit_assessment(assessment_id):
     return render_template("edit_assessment.html", assessment=assessment, units=units)
 
 @views.route("/teacher/assessments/<int:assessment_id>/delete", methods=["POST"])
+@teacher_required
 def delete_assessment(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -346,9 +307,8 @@ def delete_assessment(assessment_id):
     return redirect(url_for("views.teacher_assessments"))
 
 @views.route("/teacher/assessments/<int:assessment_id>/publish",methods=["POST"])
+@teacher_required
 def publish_assessment(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -358,9 +318,8 @@ def publish_assessment(assessment_id):
     return redirect(url_for("views.view_assessment_details", assessment_id=assessment_id))
 
 @views.route("/teacher/assessments/<int:assessment_id>/close", methods=["POST"])
+@teacher_required
 def close_assessment(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -371,9 +330,8 @@ def close_assessment(assessment_id):
 
 
 @views.route("/teacher/assessments/<int:assessment_id>/archive", methods=["POST"])
+@teacher_required
 def archive_assessment(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -383,9 +341,8 @@ def archive_assessment(assessment_id):
     return redirect(url_for("views.view_assessment_details", assessment_id=assessment_id))
 
 @views.route("/teacher/assessments/<int:assessment_id>/resources", methods=["POST"])
+@teacher_required
 def upload_assessment_resource(assessment_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
@@ -408,18 +365,16 @@ def upload_assessment_resource(assessment_id):
     return redirect(url_for("views.view_assessment_details", assessment_id=assessment_id))
 
 @views.route("/teacher/assessments/" "<int:assessment_id>/resources/" "<int:resource_id>/download")
+@teacher_required
 def download_assessment_resource(assessment_id,resource_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     resource = get_resource_by_id(resource_id)
     if (not resource or resource["assessment_id"] != assessment_id):
         return "Resource not found!", 404
     return send_from_directory(RESOURCE_UPLOAD_FOLDER, resource["stored_filename"], as_attachment=True, download_name=resource["original_filename"])
 
 @views.route("/teacher/assessments/" "<int:assessment_id>/resources/" "<int:resource_id>/delete", methods=["POST"])
+@teacher_required
 def delete_resource(assessment_id,resource_id):
-    if not teacher_required():
-        return "Teacher access required.", 403
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404

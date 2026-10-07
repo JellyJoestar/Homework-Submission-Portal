@@ -9,11 +9,18 @@
 <body class="portal-body">
     <header class="portal-header">
         <a class="portal-brand" href="{{ url_for('views.home') }}">Homework Submission Portal</a>
-        <span>User | {{ session.get("role", "Portal") }}</span>
+        {% if current_user.is_authenticated %}
+            <div class="portal-user">
+                <span>{{ current_user.full_name }} | {{ current_user.role }}</span>
+                <form method="POST" action="{{ url_for('auth.logout') }}">
+                    <button type="submit" class="logout-button">Log out</button>
+                </form>
+            </div>
+        {% endif %}
     </header>
     <aside class="portal-sidebar">
         <nav aria-label="Portal navigation">
-            {% if session.get("role") == "Teacher" %}
+            {% if current_user.is_authenticated and current_user.role == "Teacher" %}
                 <a href="{{ url_for('views.teacher_assessments') }}">Dashboard</a>
                 <a href="{{ url_for('views.new_assessment_page') }}">Create Assessment</a>
                 {% if assessment is defined and assessment.assessment_id is defined %}
@@ -23,7 +30,7 @@
                 {% else %}
                     <span class="nav-button nav-button-pending">Submission</span>
                 {% endif %}
-            {% elif session.get("role") == "Student" %}
+            {% elif current_user.is_authenticated and current_user.role == "Student" %}
                 <a href="{{ url_for('views.student_home') }}">Dashboard</a>
                 <a href="{{ url_for('views.student_submissions') }}">My Submissions</a>
                 <a href="{{ url_for('views.student_results') }}">Results</a>
@@ -31,6 +38,11 @@
         </nav>
     </aside>
     <main class="portal-main">
+        {% block flash %}
+            <div class="flash-container">
+                {% include "flash_messages.html" %}
+            </div>
+        {% endblock %}
         {% block content %}
         {% endblock %}
     </main>

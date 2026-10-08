@@ -246,6 +246,67 @@ hr {
     justify-content: center;
 }
 
+.login-form {
+    display: grid;
+    width: min(100%, 360px);
+    gap: 16px;
+}
+
+.login-form .role-button {
+    width: 100%;
+    margin: 6px 0 0;
+}
+
+.field-error {
+    margin: 0;
+    color: var(--danger);
+    font-size: 0.84rem;
+}
+
+/* Flash messages */
+
+.flash-container {
+    padding: 0 52px 0 198px;
+}
+
+.flash-message {
+    width: min(100%, 360px);
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface-soft);
+    font-size: 0.9rem;
+}
+
+.flash-container .flash-message {
+    width: auto;
+    margin: 18px 0 0;
+}
+
+.flash-error {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* Logged in user + logout */
+
+.portal-user {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.portal-user form {
+    margin: 0;
+}
+
+.logout-button {
+    min-height: 32px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+}
+
 /* Shared forms */
 
 .assessment-form-page,
@@ -823,7 +884,8 @@ input[type="file"]::file-selector-button {
         grid-template-columns: repeat(2, minmax(210px, 1fr));
     }
 
-    .app-page {
+    .app-page,
+    .flash-container {
         padding-right: 28px;
         padding-left: 178px;
     }
@@ -840,6 +902,10 @@ input[type="file"]::file-selector-button {
 
     .app-page {
         padding: 30px 18px 48px;
+    }
+
+    .flash-container {
+        padding: 0 18px;
     }
 
     .portal-sidebar {

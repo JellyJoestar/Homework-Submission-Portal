@@ -1,6 +1,7 @@
 import os
 import mysql.connector
 from dotenv import load_dotenv
+from models import User
 
 load_dotenv()
 
@@ -362,10 +363,13 @@ def get_submissions_by_assessment(assessment_id):
             s.stored_filename,
             s.status,
             s.submitted_at,
+            CONCAT(st.first_name, ' ', st.last_name) AS student_name,
             a.title AS assessment_title,
             u.unit_code,
             u.unit_name
         FROM submissions s
+        JOIN users st
+            ON s.student_id = st.user_id
         JOIN assessments a
             ON s.assessment_id = a.assessment_id
         JOIN units u
@@ -395,11 +399,14 @@ def get_submission_for_teacher(submission_id):
             s.mark,
             s.feedback,
             s.submitted_at,
+            CONCAT(st.first_name, ' ', st.last_name) AS student_name,
             a.title AS assessment_title,
             a.status AS assessment_status,
             u.unit_code,
             u.unit_name
         FROM submissions s
+        JOIN users st
+            ON s.student_id = st.user_id
         JOIN assessments a
             ON s.assessment_id = a.assessment_id
         JOIN units u
@@ -456,3 +463,49 @@ def get_submission_by_assessment_and_student(assessment_id, student_id):
     cursor.close()
     connection.close()
     return submission
+
+def get_user_by_id(user_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            user_id,
+            email,
+            password_hash,
+            role,
+            first_name,
+            last_name,
+            created_at
+        FROM users
+        WHERE user_id = %s
+        """,
+        (user_id,)
+    )
+    user = User.from_row(cursor.fetchone())
+    cursor.close()
+    connection.close()
+    return user
+
+def get_user_by_email(email):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT
+            user_id,
+            email,
+            password_hash,
+            role,
+            first_name,
+            last_name,
+            created_at
+        FROM users
+        WHERE email = %s
+        """,
+        (email,)
+    )
+    user = User.from_row(cursor.fetchone())
+    cursor.close()
+    connection.close()
+    return user

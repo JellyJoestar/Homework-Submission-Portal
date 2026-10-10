@@ -545,6 +545,100 @@ Nginx
 → MySQL
 ```
 
+### Assessment 2: Load-Balanced Deployment
+
+In Assessment 2 the application runs on two app servers behind an AWS Application Load Balancer (ALB). The ALB can send each request to either server, so both servers must use the same database and the same uploaded files.
+
+A third EC2 instance, the **data server**, holds the MySQL database and the uploads folder. The uploads folder is shared with both app servers over NFS (Network File System), so for Flask it is a normal local `uploads/` folder.
+
+```text
+User Web Browser
+       ↓
+Application Load Balancer
+       ↓                ↓
+App server 1      App server 2
+(Flask)           (Flask)
+       ↓                ↓
+Data server (private IP 172.31.71.124)
+MySQL TCP/3306 + NFS TCP/2049
+```
+
+Amazon S3 and Amazon EFS are not available in the student AWS account :/, so NFS on an EC2 instance is used instead. The data server is a single point of failure; in production it would be replaced by Amazon RDS and Amazon EFS or S3.
+
+#### Data Server
+
+```text
+Instance Name: homework-portal-data
+Instance Type: t3.small
+Operating System: Ubuntu 26.04 LTS
+Database: MySQL 8.4
+Private IP: 172.31.71.124
+Shared folder: /srv/homework-portal/uploads (resources/ and submissions/)
+```
+
+MySQL listens only on the private IP and is not reachable from the Internet.
+
+The application MySQL account only accepts connections from inside the VPC (`172.31.%`).
+
+Security Group inbound rules required between the servers:
+
+```text
+MySQL        TCP/3306     From the app servers
+NFS          TCP/2049     From the app servers
+```
+
+#### Connecting an App Server
+
+Run these steps on **each** app server. Replace `APP_DIR` with the folder where the application lives.
+
+Install the NFS client and prepare the uploads folder:
+
+```bash
+APP_DIR=/opt/Homework-Submission-Portal
+sudo apt-get install -y nfs-common
+sudo mkdir -p $APP_DIR/uploads
+sudo chown root:root $APP_DIR/uploads && sudo chmod 755 $APP_DIR/uploads
+```
+
+The empty `uploads/` folder belongs to root on purpose. If the shared folder is ever not mounted, the application cannot write to it, so an upload fails with an error instead of being saved only on one server.
+
+Mount the shared folder. This is done **only once** per app server: the line added to `/etc/fstab` makes Linux mount the folder automatically every time the server starts, and `mount -a` mounts it now without a reboot.
+
+```bash
+echo "172.31.71.124:/srv/homework-portal/uploads $APP_DIR/uploads nfs4 defaults,_netdev 0 0" | sudo tee -a /etc/fstab
+sudo mount -a
+```
+
+Verify the mount:
+
+```bash
+df -h $APP_DIR/uploads
+ls -l $APP_DIR/uploads
+```
+
+Expected result:
+
+```text
+172.31.71.124:/srv/homework-portal/uploads   (mounted)
+resources/     owned by ubuntu
+submissions/   owned by ubuntu
+```
+
+Use the following database values in the `.env` file of both app servers:
+
+```env
+DB_HOST=172.31.71.124
+DB_PORT=3306
+DB_NAME=homework_portal
+DB_USER=homework_portal
+DB_PASSWORD=<shared privately with the team>
+FLASK_SECRET_KEY=<the same value on both app servers>
+```
+
+`FLASK_SECRET_KEY` must be the same on both app servers. The login session is stored in a cookie signed with this key; with different keys, a user would be logged out when the ALB sends a request to the other server.
+
+The application must run as the `ubuntu` user, the owner of the shared folders.
+
 ---
 
 ## 15. AWS EC2 Environment

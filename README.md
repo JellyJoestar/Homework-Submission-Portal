@@ -459,6 +459,50 @@ The Flask development server is intended for local development and testing only.
 
 The Flask development server is **not** used as the public production server on AWS EC2.
 
+### Running the Functional Tests
+
+The functional tests use pytest and the Flask test client. They do **not** need MySQL or a `.env` file: database functions are replaced with fakes.
+
+Activate the Python virtual environment and run from the project root:
+
+```bash
+pytest
+```
+
+Useful options:
+
+```bash
+pytest -v                          # show each test name
+pytest tests/test_login.py         # run one file
+pytest -k "logout"                 # run tests whose name contains "logout"
+```
+
+### Writing a New Test
+
+Create a file in `tests/` whose name starts with `test_`, for example `tests/test_file_preview.py`.
+
+The fixtures in `tests/conftest.py` can be used by any test:
+
+| Fixture | Meaning |
+|---|---|
+| `client` | Anonymous user (not logged in) |
+| `teacher_client` | Logged in as the demo Teacher |
+| `student_client` | Logged in as the demo Student |
+
+If the route reads from the database, replace that function with `monkeypatch`. Patch the module that **uses** the function (`views`), not `db`:
+
+```python
+import views
+
+
+def test_student_sees_published_assessments(student_client, monkeypatch):
+    monkeypatch.setattr(views, "get_published_assessments", lambda: [])
+
+    response = student_client.get("/student")
+
+    assert response.status_code == 200
+```
+
 ---
 
 ## 14. Production Deployment Architecture

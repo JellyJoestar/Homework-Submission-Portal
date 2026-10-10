@@ -37,6 +37,20 @@ Only **Teacher** and **Student** are implemented as application user roles.
 
 The **System Administrator** is a supporting technical stakeholder responsible for the deployment environment and application availability. A separate System Administrator application interface is outside the project scope.
 
+Teachers and Students log in with their email and password. The role comes from the user account, and each page can only be opened by its role.
+
+### Demo Accounts
+
+The database script creates the following demo accounts:
+
+| Role | Email | Password |
+|---|---|---|
+| Teacher | `teacher@portal.edu.au` | `Password123!` |
+| Student | `student1@portal.edu.au` | `Password123!` |
+| Student | `student2@portal.edu.au` | `Password123!` |
+
+Passwords are stored as hashes. Accounts are created in the database script; user registration is outside the project scope.
+
 ### Teacher
 
 The Teacher can:
@@ -259,6 +273,7 @@ MySQL is used for persistent application data.
 
 Persisted information includes:
 
+- Users (Teachers and Students, with hashed passwords)
 - Units
 - Assessments
 - Assessment resources
@@ -303,9 +318,14 @@ The Flask application uses a dedicated MySQL application account instead of the 
 Homework-Submission-Portal/
 │
 ├── app.py
+├── auth.py
 ├── db.py
+├── decorators.py
+├── forms.py
+├── models.py
 ├── views.py
 ├── requirements.txt
+├── pytest.ini
 ├── .env.example
 ├── .gitignore
 ├── README.md
@@ -319,7 +339,8 @@ Homework-Submission-Portal/
 │
 ├── templates/
 │   ├── base.html
-│   ├── index.html
+│   ├── login.html
+│   ├── flash_messages.html
 │   ├── assessment_details.html
 │   ├── create_assessment.html
 │   ├── edit_assessment.html
@@ -329,7 +350,14 @@ Homework-Submission-Portal/
 │   ├── student_assessments.html
 │   ├── student_assessment_details.html
 │   ├── student_submissions.html
-│   └── student_submission_details.html
+│   ├── student_submission_details.html
+│   └── student_results.html
+│
+├── tests/
+│   ├── conftest.py
+│   ├── test_login.py
+│   ├── test_logout.py
+│   └── test_passwords.py
 │
 └── uploads/
     ├── resources/
@@ -360,11 +388,14 @@ Example:
 
 ```env
 DB_HOST=localhost
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-DB_NAME=homework_portal_db
+DB_PORT=3306
+DB_NAME=homework_portal
+DB_USER=homework_portal
+DB_PASSWORD=homework_portal
 FLASK_SECRET_KEY=your_secure_secret_key
 ```
+
+The database values match the local development user created by `database/homework-portal.sql`. Use a different password outside local development.
 
 Do not commit the real `.env` file to GitHub.
 
@@ -421,27 +452,19 @@ pip install -r requirements.txt
 
 ## 12. MySQL Database Setup
 
-Open MySQL:
+Run the database script with the MySQL root account:
 
 ```bash
-mysql -u root -p
+mysql -u root -p < database/homework-portal.sql
 ```
 
-Create the application database:
+The script:
 
-```sql
-CREATE DATABASE homework_portal_db;
-```
+- Drops and recreates the `homework_portal` database. **Running it again deletes all existing data.**
+- Creates the `homework_portal` MySQL application account (local development password: `homework_portal`).
+- Creates the tables and inserts the demo Units and the demo accounts.
 
-Import the project schema:
-
-```bash
-mysql -u root -p homework_portal_db < database/homework-portal.sql
-```
-
-A dedicated MySQL application account should be created for the Flask application.
-
-The account details should match the values stored in the private `.env` file.
+The account details must match the values stored in the private `.env` file.
 
 The application should not use the MySQL root account for normal runtime database access.
 
@@ -934,6 +957,10 @@ The EC2 production environment uses the integrated `main` branch.
 | IFN636-34 | AWS EC2 deployment |
 | IFN636-32 | Final end-to-end verification |
 | IFN636-41 | Final README documentation |
+| IFN636-43 | Login with email and password (Assessment 2) |
+| IFN636-45 | Logout (Assessment 2) |
+| IFN636-57 | Role-based access with the authenticated account (Assessment 2) |
+| IFN636-80 | Functional testing framework (Assessment 2) |
 
 The project traceability follows:
 
@@ -1017,7 +1044,7 @@ The Homework Submission Portal is an academic prototype with a deliberately boun
 
 Current limitations include:
 
-- The system uses role selection rather than a full authentication and account-management system.
+- Accounts are created by the database script; user registration, password reset and account management are not implemented.
 - There is no separate System Administrator application interface.
 - HTTPS/TLS is not currently configured.
 - The EC2 instance uses an auto-assigned Public IPv4 address instead of an Elastic IP.

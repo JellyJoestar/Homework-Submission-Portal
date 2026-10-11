@@ -42,6 +42,12 @@
         </a>
     </p>
 
+    <iframe
+        class="file-preview-frame"
+        src="{{ url_for('preview.teacher_preview_submission', submission_id=submission.submission_id) }}"
+        title="Preview of {{ submission.original_filename }}"
+    ></iframe>
+
     <div class="detail-row">
         <strong>Status:</strong>
         {{ submission.status }}

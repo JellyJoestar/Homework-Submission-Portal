@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from auth import auth, login_manager
 from views import views
+from preview.routes import preview
 
 load_dotenv()
 
@@ -17,6 +18,7 @@ login_manager.init_app(app)
 
 app.register_blueprint(auth)
 app.register_blueprint(views)
+app.register_blueprint(preview)
 
 if __name__ == "__main__":
     app.run(debug=True)

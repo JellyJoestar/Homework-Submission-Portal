@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Preview - {{ filename }}</title>
+    <!-- Shown inside an iframe, so it does not use base.html -->
+    <style>
+        body {
+            margin: 0;
+            padding: 24px 32px;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: #ffffff;
+        }
+
+        img,
+        table {
+            max-width: 100%;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            border: 1px solid #d1d5db;
+            padding: 4px 8px;
+        }
+
+        .preview-message {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    {% if content %}
+        {# HTML converted from the DOCX. Scripts can't run: see the Content-Security-Policy header in views.py #}
+        {{ content | safe }}
+    {% else %}
+        <p class="preview-message">{{ message }}</p>
+    {% endif %}
+</body>
+</html>

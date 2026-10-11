@@ -518,6 +518,16 @@ input[type="file"]::file-selector-button {
     border-bottom: 1px solid var(--line);
 }
 
+.file-preview-frame {
+    display: block;
+    width: 100%;
+    height: 600px;
+    margin: 16px 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
 .detail-row {
     display: flex;
     gap: 16px;
@@ -872,6 +882,11 @@ input[type="file"]::file-selector-button {
     padding-bottom: 22px;
     border-bottom: 1px solid var(--line);
     border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.confirmation-page .file-preview-frame {
+    max-width: 620px;
+    margin: 16px auto 0;
 }
 
 .confirmation-page .page-action {

@@ -265,6 +265,26 @@ uploads/submissions/
 
 The `uploads/` directory is excluded from Git version control.
 
+### Submitted File Preview (Assessment 2)
+
+The submission details pages for Teachers and Students show a preview of the submitted file, so it can be read without downloading it:
+
+| File type | How it is shown |
+|---|---|
+| PDF | Sent inline and shown with the browser's built-in PDF viewer |
+| DOCX | Converted to HTML with the `mammoth` library |
+| Other / unreadable | A message asking the user to download the file |
+
+The preview code lives in the `preview/` package:
+
+- `preview/factory.py` - `PreviewFactory` (Factory pattern) chooses a preview class from the file extension. `PdfPreview`, `DocxPreview` and `UnsupportedPreview` inherit from the abstract class `FilePreview` and each implement `render()` (polymorphism).
+- `preview/routes.py` - the `preview` Blueprint with the two preview routes:
+
+```text
+GET /student/submissions/<submission_id>/preview    Student, own submissions only
+GET /teacher/submissions/<submission_id>/preview    Teacher
+```
+
 ---
 
 ## 7. Data Persistence
@@ -300,6 +320,7 @@ The Flask application uses a dedicated MySQL application account instead of the 
 | Database | MySQL 8.4 |
 | Database Connector | mysql-connector-python |
 | Environment Configuration | python-dotenv |
+| DOCX Preview | mammoth |
 | Production WSGI Server | Gunicorn 26.2.0 |
 | Reverse Proxy | Nginx 1.28.3 |
 | Server Operating System | Ubuntu 26.04 LTS |
@@ -330,6 +351,11 @@ Homework-Submission-Portal/
 ├── .gitignore
 ├── README.md
 │
+├── preview/
+│   ├── __init__.py
+│   ├── factory.py
+│   └── routes.py
+│
 ├── database/
 │   └── homework-portal.sql
 │
@@ -351,13 +377,17 @@ Homework-Submission-Portal/
 │   ├── student_assessment_details.html
 │   ├── student_submissions.html
 │   ├── student_submission_details.html
-│   └── student_results.html
+│   ├── student_results.html
+│   └── file_preview.html
 │
 ├── tests/
 │   ├── conftest.py
+│   ├── files/
+│   ├── test_file_preview.py
 │   ├── test_login.py
 │   ├── test_logout.py
-│   └── test_passwords.py
+│   ├── test_passwords.py
+│   └── test_preview_security.py
 │
 └── uploads/
     ├── resources/
@@ -502,7 +532,7 @@ pytest -k "logout"                 # run tests whose name contains "logout"
 
 ### Writing a New Test
 
-Create a file in `tests/` whose name starts with `test_`, for example `tests/test_file_preview.py`.
+Create a file in `tests/` whose name starts with `test_`, for example `tests/test_results.py`.
 
 The fixtures in `tests/conftest.py` can be used by any test:
 
@@ -511,8 +541,9 @@ The fixtures in `tests/conftest.py` can be used by any test:
 | `client` | Anonymous user (not logged in) |
 | `teacher_client` | Logged in as the demo Teacher |
 | `student_client` | Logged in as the demo Student |
+| `submissions` | Fake submissions whose files are in `tests/files/` |
 
-If the route reads from the database, replace that function with `monkeypatch`. Patch the module that **uses** the function (`views`), not `db`:
+If the route reads from the database, replace that function with `monkeypatch`. Patch the module that **uses** the function (`views`, or `preview.routes` for the preview routes), not `db`:
 
 ```python
 import views
@@ -922,6 +953,17 @@ Gunicorn listens only on:
 
 MySQL is accessed locally by the Flask application and is not intended to be publicly exposed.
 
+### Previews of Uploaded Files
+
+Submitted files are uploaded by users, so their content is not trusted. Every preview response is sent with:
+
+```text
+Content-Security-Policy: sandbox
+X-Content-Type-Options: nosniff
+```
+
+The sandbox stops any script inside a preview from running (for example a `javascript:` link inside a DOCX), and `nosniff` stops the browser from guessing a different file type.
+
 ### Runtime Files
 
 The following are excluded from Git:
@@ -1099,6 +1141,8 @@ The EC2 production environment uses the integrated `main` branch.
 | IFN636-45 | Logout (Assessment 2) |
 | IFN636-57 | Role-based access with the authenticated account (Assessment 2) |
 | IFN636-80 | Functional testing framework (Assessment 2) |
+| IFN636-90 | Submitted file preview for PDF and DOCX (Assessment 2) |
+| IFN636-140 | Submitted file previews cannot run scripts (Assessment 2) |
 
 The project traceability follows:
 
@@ -1188,6 +1232,7 @@ Current limitations include:
 - The EC2 instance uses an auto-assigned Public IPv4 address instead of an Elastic IP.
 - Uploaded files are stored on the EC2 filesystem rather than managed object storage.
 - Only PDF and DOCX files are supported.
+- DOCX previews show the document content (text, headings, lists, tables and images) but not its exact page layout, such as headers, footers or page breaks.
 - The application uses a simple Student submission model rather than multiple submission versions or submission history.
 - Assessment criteria are simple and do not provide a weighted or nested rubric engine.
 - Virus or malware scanning is not implemented.

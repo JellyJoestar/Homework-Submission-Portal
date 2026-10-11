@@ -8,17 +8,23 @@ Fixtures you can use in any test:
     client          -> anonymous user (not logged in)
     teacher_client  -> logged in as the demo Teacher
     student_client  -> logged in as the demo Student
+    submissions     -> fake submissions whose files are in tests/files
 """
+from pathlib import Path
+
 import pytest
 from werkzeug.security import generate_password_hash
 
 import auth
+from preview import routes as preview_routes
 from app import app as flask_app
 from models import User
 
 PASSWORD = "Password123!"
 TEACHER_ID = 1
 STUDENT_ID = 2
+OTHER_STUDENT_ID = 3
+FILES_DIR = Path(__file__).parent / "files"
 
 
 @pytest.fixture
@@ -69,3 +75,26 @@ def teacher_client(client):
 def student_client(client):
     login_as(client, STUDENT_ID)
     return client
+
+
+@pytest.fixture
+def submissions(monkeypatch):
+    submissions = {
+        1: {"student_id": STUDENT_ID, "original_filename": "report.pdf", "stored_filename": "report.pdf"},
+        2: {"student_id": STUDENT_ID, "original_filename": "essay.docx", "stored_filename": "essay.docx"},
+        3: {"student_id": STUDENT_ID, "original_filename": "links.docx", "stored_filename": "malicious-link.docx"},
+        4: {"student_id": OTHER_STUDENT_ID, "original_filename": "other.pdf", "stored_filename": "report.pdf"},
+        5: {"student_id": STUDENT_ID, "original_filename": "lost.pdf", "stored_filename": "deleted-from-disk.pdf"},
+    }
+
+    def get_submission_by_id(submission_id, student_id):
+        # Same rule as the real query: a student only finds their own submissions
+        submission = submissions.get(submission_id)
+        if submission and submission["student_id"] == student_id:
+            return submission
+        return None
+
+    monkeypatch.setattr(preview_routes, "SUBMISSION_UPLOAD_FOLDER", str(FILES_DIR))
+    monkeypatch.setattr(preview_routes, "get_submission_by_id", get_submission_by_id)
+    monkeypatch.setattr(preview_routes, "get_submission_for_teacher", lambda submission_id: submissions.get(submission_id))
+    return submissions

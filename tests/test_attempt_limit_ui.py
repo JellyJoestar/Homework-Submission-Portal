@@ -25,11 +25,12 @@ def assessment(max_attempts=3, status="Published"):
     }
 
 
-def submission(attempt_count, student_id=STUDENT_ID):
+def submission(attempt_count, student_id=STUDENT_ID, original_filename="latest-answer.pdf"):
     return {
         "submission_id": 41,
         "assessment_id": ASSESSMENT_ID,
         "student_id": student_id,
+        "original_filename": original_filename,
         "attempt_count": attempt_count,
     }
 
@@ -91,6 +92,33 @@ def test_two_of_three_displays_one_remaining_and_allows_upload(
     assert_detail_value(response.data, b"Remaining attempts:", b"1")
     assert b'name="submission_file"' in response.data
     assert b'accept=".pdf,.docx"' in response.data
+
+
+def test_existing_submission_displays_latest_filename_and_details_link(
+    student_client, monkeypatch
+):
+    configure_details_route(monkeypatch, max_attempts=3, attempt_count=2)
+
+    response = student_client.get(f"/student/assessments/{ASSESSMENT_ID}")
+
+    assert response.status_code == 200
+    assert b"Latest Submission" in response.data
+    assert_detail_value(response.data, b"Latest filename:", b"latest-answer.pdf")
+    assert b'href="/student/submissions/41"' in response.data
+    assert re.search(rb">\s*View Submission\s*</a>", response.data)
+
+
+def test_no_submission_hides_latest_filename_and_details_link(
+    student_client, monkeypatch
+):
+    configure_details_route(monkeypatch, max_attempts=3, attempt_count=None)
+
+    response = student_client.get(f"/student/assessments/{ASSESSMENT_ID}")
+
+    assert response.status_code == 200
+    assert b"Latest Submission" not in response.data
+    assert b"Latest filename:" not in response.data
+    assert b"View Submission" not in response.data
 
 
 def test_three_of_three_has_no_functional_upload_and_accessible_warning_dialog(
@@ -163,6 +191,55 @@ def test_route_queries_only_the_logged_in_students_submission(
     assert response.status_code == 200
     assert captured == [(ASSESSMENT_ID, STUDENT_ID)]
     assert_detail_value(response.data, b"Attempts:", b"2 of 3")
+
+
+def test_submission_details_link_target_scopes_lookup_to_logged_in_student(
+    student_client, monkeypatch
+):
+    captured = []
+
+    def get_owned_submission(submission_id, student_id):
+        captured.append((submission_id, student_id))
+        return {
+            "submission_id": submission_id,
+            "assessment_id": ASSESSMENT_ID,
+            "student_id": student_id,
+            "original_filename": "latest-answer.pdf",
+            "stored_filename": "stored-latest-answer.pdf",
+            "attempt_count": 2,
+            "status": "Submitted",
+            "mark": None,
+            "feedback": None,
+            "submitted_at": "2026-10-13 10:00:00",
+            "assessment_title": "Assessment 2",
+            "unit_code": "IFN636",
+            "unit_name": "Software Life Cycle Management",
+        }
+
+    monkeypatch.setattr(views, "get_submission_by_id", get_owned_submission)
+
+    response = student_client.get("/student/submissions/41")
+
+    assert response.status_code == 200
+    assert captured == [(41, STUDENT_ID)]
+    assert b"latest-answer.pdf" in response.data
+
+
+def test_submission_details_link_target_returns_404_for_unowned_submission(
+    student_client, monkeypatch
+):
+    captured = []
+
+    def reject_unowned_submission(submission_id, student_id):
+        captured.append((submission_id, student_id))
+        return None
+
+    monkeypatch.setattr(views, "get_submission_by_id", reject_unowned_submission)
+
+    response = student_client.get("/student/submissions/99")
+
+    assert response.status_code == 404
+    assert captured == [(99, STUDENT_ID)]
 
 
 @pytest.mark.parametrize(

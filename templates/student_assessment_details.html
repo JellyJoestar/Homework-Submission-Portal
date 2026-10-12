@@ -55,6 +55,21 @@
     {{ assessment.status }}
 </div>
 
+{% if submission %}
+    <h2>Latest Submission</h2>
+
+    <div class="detail-row">
+        <strong>Latest filename:</strong>
+        {{ submission.original_filename }}
+    </div>
+
+    <p class="page-action">
+        <a class="button-link" href="{{ url_for('views.student_submission_details', submission_id=submission.submission_id) }}">
+            View Submission
+        </a>
+    </p>
+{% endif %}
+
 <h2>Supporting Resources</h2>
 
 {% if resources %}

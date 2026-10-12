@@ -144,6 +144,7 @@ def student_assessment_details(assessment_id):
         "student_assessment_details.html",
         assessment=assessment,
         resources=resources,
+        submission=submission,
         attempt_count=attempt_count,
         remaining_attempts=remaining_attempts,
         unlimited_attempts=unlimited_attempts,

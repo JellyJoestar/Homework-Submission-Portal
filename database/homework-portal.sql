@@ -64,10 +64,14 @@ CREATE TABLE submissions (
     student_id INT NOT NULL,
     original_filename VARCHAR(255) NOT NULL,
     stored_filename VARCHAR(255) NOT NULL,
+    attempt_count BIGINT UNSIGNED NOT NULL DEFAULT 1,
     status VARCHAR(20) NOT NULL DEFAULT 'Submitted',
     mark DECIMAL(5,2) NULL,
     feedback TEXT NULL,
     submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_submissions_attempt_count_positive
+        CHECK (attempt_count >= 1),
 
     FOREIGN KEY (assessment_id)
         REFERENCES assessments(assessment_id)

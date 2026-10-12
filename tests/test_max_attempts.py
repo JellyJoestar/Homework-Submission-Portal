@@ -195,6 +195,11 @@ def test_student_details_display_numeric_limit(student_client, monkeypatch):
         lambda assessment_id: assessment(status="Published", max_attempts=3),
     )
     monkeypatch.setattr(views, "get_resources_by_assessment", lambda assessment_id: [])
+    monkeypatch.setattr(
+        views,
+        "get_submission_by_assessment_and_student",
+        lambda assessment_id, student_id: None,
+    )
 
     response = student_client.get("/student/assessments/7")
 

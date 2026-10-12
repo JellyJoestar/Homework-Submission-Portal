@@ -36,10 +36,39 @@
     {{ "Unlimited" if assessment.max_attempts == 0 else assessment.max_attempts }}
 </div>
 
+<div class="detail-row attempt-count">
+    <strong>Attempts:</strong>
+    {% if unlimited_attempts %}
+        {{ attempt_count }} — Unlimited
+    {% else %}
+        {{ attempt_count }} of {{ assessment.max_attempts }}
+    {% endif %}
+</div>
+
+<div class="detail-row remaining-attempts">
+    <strong>Remaining attempts:</strong>
+    {{ "Unlimited" if unlimited_attempts else remaining_attempts }}
+</div>
+
 <div class="detail-row">
     <strong>Status:</strong>
     {{ assessment.status }}
 </div>
+
+{% if submission %}
+    <h2>Latest Submission</h2>
+
+    <div class="detail-row">
+        <strong>Latest filename:</strong>
+        {{ submission.original_filename }}
+    </div>
+
+    <p class="page-action">
+        <a class="button-link" href="{{ url_for('views.student_submission_details', submission_id=submission.submission_id) }}">
+            View Submission
+        </a>
+    </p>
+{% endif %}
 
 <h2>Supporting Resources</h2>
 
@@ -64,6 +93,44 @@
 {% endif %}
     <h2>Submit Assessment</h2>
 
+{% if submission_limit_reached %}
+    <p id="submission-limit-message" class="limit-warning" role="alert">
+        Maximum submission limit reached
+    </p>
+
+    <div class="form-action-row">
+        <button
+            type="button"
+            id="submission-limit-trigger"
+            aria-haspopup="dialog"
+            aria-controls="submission-limit-dialog"
+            aria-describedby="submission-limit-message"
+        >
+            Submit Assessment
+        </button>
+    </div>
+
+    <dialog
+        id="submission-limit-dialog"
+        aria-labelledby="submission-limit-dialog-title"
+    >
+        <h3 id="submission-limit-dialog-title">
+            Maximum submission limit reached
+        </h3>
+        <p>No remaining submission attempts are available.</p>
+        <form method="dialog">
+            <button type="submit">Close</button>
+        </form>
+    </dialog>
+
+    <script>
+        (() => {
+            const trigger = document.getElementById("submission-limit-trigger");
+            const dialog = document.getElementById("submission-limit-dialog");
+            trigger.addEventListener("click", () => dialog.showModal());
+        })();
+    </script>
+{% else %}
     <form class="submission-upload-form"
         method="POST"
         action="{{ url_for('views.student_submit_assessment', assessment_id=assessment.assessment_id) }}"
@@ -87,6 +154,7 @@
             </button>
         </div>
     </form>
+{% endif %}
 
     <p class="page-action">
         <a class="button-link" href="{{ url_for('views.student_submissions') }}">

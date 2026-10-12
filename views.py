@@ -3,6 +3,7 @@ import uuid
 from decimal import Decimal, InvalidOperation
 from flask import (
     Blueprint,
+    current_app,
     redirect,
     render_template,
     request,
@@ -25,7 +26,12 @@ from db import (
     create_assessment_resource,
     delete_assessment_resource,
     get_published_assessments,
-    create_submission,
+    save_submission_attempt,
+    AssessmentNotFoundError,
+    AssessmentNotPublishedError,
+    AttemptLimitReachedError,
+    SubmissionAlreadyGradedError,
+    SubmissionCommitOutcomeUnknownError,
     get_submissions_by_student,
     get_submission_by_id,
     get_submission_by_assessment_and_student,
@@ -84,6 +90,19 @@ def allowed_submission_file(filename):
         in ALLOWED_SUBMISSION_EXTENSIONS
     )
 
+
+def remove_submission_file(stored_filename):
+    if not stored_filename:
+        return
+    try:
+        os.remove(os.path.join(SUBMISSION_UPLOAD_FOLDER, stored_filename))
+    except FileNotFoundError:
+        pass
+    except OSError:
+        current_app.logger.warning(
+            "Could not remove superseded submission file %s", stored_filename
+        )
+
 @views.route("/")
 def home():
     if current_user.is_authenticated:
@@ -108,7 +127,29 @@ def student_assessment_details(assessment_id):
     if assessment["status"] != "Published":
         return "Assessment is not available to students.", 403
     resources = get_resources_by_assessment(assessment_id)
-    return render_template("student_assessment_details.html", assessment=assessment, resources=resources)
+    submission = get_submission_by_assessment_and_student(
+        assessment_id, current_user.id
+    )
+    attempt_count = submission["attempt_count"] if submission else 0
+    unlimited_attempts = assessment["max_attempts"] == 0
+    remaining_attempts = (
+        None
+        if unlimited_attempts
+        else max(assessment["max_attempts"] - attempt_count, 0)
+    )
+    submission_limit_reached = (
+        not unlimited_attempts and remaining_attempts == 0
+    )
+    return render_template(
+        "student_assessment_details.html",
+        assessment=assessment,
+        resources=resources,
+        submission=submission,
+        attempt_count=attempt_count,
+        remaining_attempts=remaining_attempts,
+        unlimited_attempts=unlimited_attempts,
+        submission_limit_reached=submission_limit_reached,
+    )
 
 @views.route("/student/assessments/<int:assessment_id>/submit",methods=["POST"])
 @student_required
@@ -119,9 +160,6 @@ def student_submit_assessment(assessment_id):
         return "Assessment not found.", 404
     if assessment["status"] != "Published":
         return "Submissions are only available for published assessments.", 403
-    existing_submission = get_submission_by_assessment_and_student(assessment_id, student_id)
-    if existing_submission:
-        return "You have already submitted this assessment.", 400
     if "submission_file" not in request.files:
         return "No submission file provided.", 400
     file = request.files["submission_file"]
@@ -134,10 +172,45 @@ def student_submit_assessment(assessment_id):
         return "Invalid submission filename.", 400
     extension = original_filename.rsplit(".", 1)[1].lower()
     stored_filename = f"{uuid.uuid4().hex}.{extension}"
-    os.makedirs(SUBMISSION_UPLOAD_FOLDER,exist_ok=True)
-    file.save(os.path.join(SUBMISSION_UPLOAD_FOLDER,stored_filename))
-    submission_id = create_submission(assessment_id, student_id, original_filename, stored_filename)
-    return redirect(url_for("views.student_submission_details", submission_id=submission_id))
+    os.makedirs(SUBMISSION_UPLOAD_FOLDER, exist_ok=True)
+    stored_path = os.path.join(SUBMISSION_UPLOAD_FOLDER, stored_filename)
+    try:
+        file.save(stored_path)
+    except Exception:
+        remove_submission_file(stored_filename)
+        raise
+
+    try:
+        result = save_submission_attempt(
+            assessment_id, student_id, original_filename, stored_filename
+        )
+    except AttemptLimitReachedError:
+        remove_submission_file(stored_filename)
+        return "Maximum submission limit reached", 403
+    except SubmissionAlreadyGradedError:
+        remove_submission_file(stored_filename)
+        return "Graded submissions cannot be resubmitted.", 403
+    except AssessmentNotFoundError:
+        remove_submission_file(stored_filename)
+        return "Assessment not found.", 404
+    except AssessmentNotPublishedError:
+        remove_submission_file(stored_filename)
+        return "Submissions are only available for published assessments.", 403
+    except SubmissionCommitOutcomeUnknownError:
+        # Keep the file: MySQL may have committed before the connection failed.
+        # An orphan is safer than a current submission referencing a missing file.
+        raise
+    except Exception:
+        remove_submission_file(stored_filename)
+        raise
+
+    remove_submission_file(result["replaced_stored_filename"])
+    return redirect(
+        url_for(
+            "views.student_submission_details",
+            submission_id=result["submission_id"]
+        )
+    )
 
 @views.route("/student/submissions")
 @student_required

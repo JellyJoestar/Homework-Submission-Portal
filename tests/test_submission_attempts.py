@@ -29,6 +29,8 @@ def install_submission_double(monkeypatch, state, max_attempts):
     ):
         assert assessment_id == ASSESSMENT_ID
         assert student_id == STUDENT_ID
+        if state.get("mark") is not None:
+            raise db.SubmissionAlreadyGradedError
         if (
             state.get("attempt_count", 0) > 0
             and max_attempts != 0
@@ -153,6 +155,90 @@ def test_unlimited_assessment_counts_every_success_without_blocking(
     assert state["attempt_count"] == 4
     assert len(list(tmp_path.iterdir())) == 1
     assert (tmp_path / state["stored_filename"]).read_bytes() == b"4"
+
+
+def assert_graded_resubmission_rejected(
+    student_client, monkeypatch, tmp_path, *, mark, max_attempts
+):
+    current_filename = "graded.pdf"
+    (tmp_path / current_filename).write_bytes(b"graded current file")
+    state = {
+        "submission_id": 41,
+        "attempt_count": 1,
+        "original_filename": "graded.pdf",
+        "stored_filename": current_filename,
+        "mark": mark,
+        "feedback": "Awarded feedback",
+    }
+    original_state = state.copy()
+    configure_submission_route(monkeypatch, tmp_path, max_attempts=max_attempts)
+    install_submission_double(monkeypatch, state, max_attempts=max_attempts)
+
+    response = student_client.post(
+        f"/student/assessments/{ASSESSMENT_ID}/submit",
+        data=upload("replacement.pdf", b"must be discarded"),
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 403
+    assert b"Graded submissions cannot be resubmitted." in response.data
+    assert state == original_state
+    assert (tmp_path / current_filename).read_bytes() == b"graded current file"
+    assert [path.name for path in tmp_path.iterdir()] == [current_filename]
+
+
+def test_graded_submission_returns_403_and_preserves_file_count_and_results(
+    student_client, monkeypatch, tmp_path
+):
+    assert_graded_resubmission_rejected(
+        student_client, monkeypatch, tmp_path, mark=85, max_attempts=3
+    )
+
+
+def test_zero_mark_submission_is_graded_and_returns_403(
+    student_client, monkeypatch, tmp_path
+):
+    assert_graded_resubmission_rejected(
+        student_client, monkeypatch, tmp_path, mark=0, max_attempts=3
+    )
+
+
+def test_unlimited_but_graded_submission_returns_403(
+    student_client, monkeypatch, tmp_path
+):
+    assert_graded_resubmission_rejected(
+        student_client, monkeypatch, tmp_path, mark=85, max_attempts=0
+    )
+
+
+def test_ungraded_submission_resubmits_normally(
+    student_client, monkeypatch, tmp_path
+):
+    current_filename = "ungraded.pdf"
+    (tmp_path / current_filename).write_bytes(b"old")
+    state = {
+        "submission_id": 41,
+        "attempt_count": 1,
+        "original_filename": "ungraded.pdf",
+        "stored_filename": current_filename,
+        "mark": None,
+        "feedback": None,
+    }
+    configure_submission_route(monkeypatch, tmp_path, max_attempts=3)
+    install_submission_double(monkeypatch, state, max_attempts=3)
+
+    response = student_client.post(
+        f"/student/assessments/{ASSESSMENT_ID}/submit",
+        data=upload("replacement.pdf", b"new"),
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 302
+    assert state["attempt_count"] == 2
+    assert state["mark"] is None
+    assert state["feedback"] is None
+    assert not (tmp_path / current_filename).exists()
+    assert (tmp_path / state["stored_filename"]).read_bytes() == b"new"
 
 
 @pytest.mark.parametrize(
@@ -352,7 +438,13 @@ def test_database_resubmission_increments_under_lock_and_returns_old_filename(
     connection = TransactionConnection(
         [
             {"assessment_id": 7, "status": "Published", "max_attempts": 3},
-            {"submission_id": 41, "stored_filename": "old.pdf", "attempt_count": 1},
+            {
+                "submission_id": 41,
+                "stored_filename": "old.pdf",
+                "attempt_count": 1,
+                "mark": None,
+                "feedback": None,
+            },
         ]
     )
     monkeypatch.setattr(db, "get_db_connection", lambda: connection)
@@ -374,7 +466,13 @@ def test_database_limit_rejection_rolls_back_without_update(monkeypatch):
     connection = TransactionConnection(
         [
             {"assessment_id": 7, "status": "Published", "max_attempts": 2},
-            {"submission_id": 41, "stored_filename": "old.pdf", "attempt_count": 2},
+            {
+                "submission_id": 41,
+                "stored_filename": "old.pdf",
+                "attempt_count": 2,
+                "mark": None,
+                "feedback": None,
+            },
         ]
     )
     monkeypatch.setattr(db, "get_db_connection", lambda: connection)
@@ -390,7 +488,13 @@ def test_database_unlimited_resubmission_still_increments(monkeypatch):
     connection = TransactionConnection(
         [
             {"assessment_id": 7, "status": "Published", "max_attempts": 0},
-            {"submission_id": 41, "stored_filename": "old.pdf", "attempt_count": 99},
+            {
+                "submission_id": 41,
+                "stored_filename": "old.pdf",
+                "attempt_count": 99,
+                "mark": None,
+                "feedback": None,
+            },
         ]
     )
     monkeypatch.setattr(db, "get_db_connection", lambda: connection)
@@ -399,6 +503,32 @@ def test_database_unlimited_resubmission_still_increments(monkeypatch):
 
     assert result["attempt_count"] == 100
     assert connection.committed and not connection.rolled_back
+
+
+@pytest.mark.parametrize("mark", [85, 0])
+def test_database_non_null_mark_rolls_back_without_update(monkeypatch, mark):
+    connection = TransactionConnection(
+        [
+            {"assessment_id": 7, "status": "Published", "max_attempts": 0},
+            {
+                "submission_id": 41,
+                "stored_filename": "graded.pdf",
+                "attempt_count": 1,
+                "mark": mark,
+                "feedback": "Awarded feedback",
+            },
+        ]
+    )
+    monkeypatch.setattr(db, "get_db_connection", lambda: connection)
+
+    with pytest.raises(db.SubmissionAlreadyGradedError):
+        db.save_submission_attempt(7, 2, "replacement.pdf", "new.pdf")
+
+    queries = [query for query, params in connection.cursor_instance.executions]
+    assert len(queries) == 2
+    assert "mark" in queries[1] and "FOR UPDATE" in queries[1]
+    assert not any("UPDATE submissions" in query for query in queries)
+    assert connection.rolled_back and not connection.committed
 
 
 def test_database_rechecks_published_status_inside_locked_transaction(monkeypatch):

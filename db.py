@@ -18,6 +18,10 @@ class AttemptLimitReachedError(Exception):
     """Raised when a successful submission would exceed max_attempts."""
 
 
+class SubmissionAlreadyGradedError(Exception):
+    """Raised when legacy grading has awarded a mark to the submission."""
+
+
 class SubmissionCommitOutcomeUnknownError(Exception):
     """Raised when MySQL may have committed despite a connection failure."""
 
@@ -327,7 +331,7 @@ def save_submission_attempt(
 
         cursor.execute(
             """
-            SELECT submission_id, stored_filename, attempt_count
+            SELECT submission_id, stored_filename, attempt_count, mark, feedback
             FROM submissions
             WHERE assessment_id = %s
             AND student_id = %s
@@ -338,6 +342,9 @@ def save_submission_attempt(
         submission = cursor.fetchone()
 
         if submission:
+            if submission["mark"] is not None:
+                raise SubmissionAlreadyGradedError
+
             if (
                 assessment["max_attempts"] != 0
                 and submission["attempt_count"] >= assessment["max_attempts"]

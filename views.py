@@ -30,6 +30,7 @@ from db import (
     AssessmentNotFoundError,
     AssessmentNotPublishedError,
     AttemptLimitReachedError,
+    SubmissionAlreadyGradedError,
     SubmissionCommitOutcomeUnknownError,
     get_submissions_by_student,
     get_submission_by_id,
@@ -185,6 +186,9 @@ def student_submit_assessment(assessment_id):
     except AttemptLimitReachedError:
         remove_submission_file(stored_filename)
         return "Maximum submission limit reached", 403
+    except SubmissionAlreadyGradedError:
+        remove_submission_file(stored_filename)
+        return "Graded submissions cannot be resubmitted.", 403
     except AssessmentNotFoundError:
         remove_submission_file(stored_filename)
         return "Assessment not found.", 404

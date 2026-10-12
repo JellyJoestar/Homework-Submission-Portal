@@ -38,7 +38,10 @@ CREATE TABLE assessments (
     criteria TEXT,
     due_date DATETIME,
     unit_id INT NOT NULL,
+    max_attempts INT NOT NULL DEFAULT 1,
     status VARCHAR(20) NOT NULL DEFAULT 'Draft',
+    CONSTRAINT chk_assessments_max_attempts_nonnegative
+        CHECK (max_attempts >= 0),
     FOREIGN KEY (unit_id)
         REFERENCES units(unit_id)
 );

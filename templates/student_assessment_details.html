@@ -32,6 +32,11 @@
 </div>
 
 <div class="detail-row">
+    <strong>Maximum attempts:</strong>
+    {{ "Unlimited" if assessment.max_attempts == 0 else assessment.max_attempts }}
+</div>
+
+<div class="detail-row">
     <strong>Status:</strong>
     {{ assessment.status }}
 </div>

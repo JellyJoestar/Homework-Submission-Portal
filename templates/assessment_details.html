@@ -30,6 +30,11 @@
         <strong>Due Date:</strong>
         {{ assessment.due_date or "Not specified" }}
     </div>
+    
+    <div class="detail-row">
+        <strong>Late Submissions:</strong>
+        {{ "Allowed" if assessment.allow_late else "Not Allowed" }}
+    </div>
 
     <div class="detail-row">
         <strong>Status:</strong>

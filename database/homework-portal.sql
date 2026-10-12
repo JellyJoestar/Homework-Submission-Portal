@@ -38,6 +38,7 @@ CREATE TABLE assessments (
     criteria TEXT,
     due_date DATETIME,
     unit_id INT NOT NULL,
+    allow_late BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(20) NOT NULL DEFAULT 'Draft',
     FOREIGN KEY (unit_id)
         REFERENCES units(unit_id)

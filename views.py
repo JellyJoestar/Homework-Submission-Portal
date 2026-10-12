@@ -60,6 +60,22 @@ SUBMISSION_UPLOAD_FOLDER = os.path.join(
 )
 
 ALLOWED_SUBMISSION_EXTENSIONS = {"pdf", "docx"}
+MAX_MYSQL_INT = 2147483647
+
+
+def parse_max_attempts(raw_value):
+    if raw_value is None:
+        return 1
+
+    value = raw_value.strip()
+    if not value or not value.isascii() or not value.isdigit():
+        raise ValueError
+
+    max_attempts = int(value)
+    if max_attempts > MAX_MYSQL_INT:
+        raise ValueError
+
+    return max_attempts
 
 def allowed_submission_file(filename):
     return (
@@ -235,6 +251,10 @@ def create_new_assessment():
     due_date_raw = request.form.get("due_date") or ""
     unit_id_raw = request.form.get("unit_id")
     allow_late = bool(request.form.get("allow_late"))
+    try:
+        max_attempts = parse_max_attempts(request.form.get("max_attempts"))
+    except ValueError:
+        return "Maximum attempts must be a non-negative integer.", 400
     if not title:
         return "Title can't be empty!", 400
     try:
@@ -253,7 +273,8 @@ def create_new_assessment():
             return "Invalid due date!", 400
     else:
         due_date = None
-    create_assessment(title, description, criteria, due_date, unit_id, allow_late)
+    create_assessment(
+        title, description, criteria, due_date, unit_id, max_attempts, allow_late)
     return redirect(url_for("views.teacher_assessments"))
 
 @views.route("/teacher/assessments/<int:assessment_id>/edit", methods=["GET", "POST"])
@@ -272,6 +293,14 @@ def edit_assessment(assessment_id):
         due_date_raw = request.form.get("due_date") or ""
         unit_id_raw = request.form.get("unit_id")
         allow_late = bool(request.form.get("allow_late"))
+        max_attempts_raw = request.form.get("max_attempts")
+        if max_attempts_raw is None:
+            max_attempts = assessment["max_attempts"]
+        else:
+            try:
+                max_attempts = parse_max_attempts(max_attempts_raw)
+            except ValueError:
+                return "Maximum attempts must be a non-negative integer.", 400
         if not title:
             return "Title can't be empty!", 400
         try:
@@ -288,7 +317,15 @@ def edit_assessment(assessment_id):
                 return "Invalid due date!", 400
         else:
             due_date = None
-        update_assessment(assessment_id, title, description, criteria, due_date, unit_id, allow_late)
+        update_assessment(
+            assessment_id,
+            title,
+            description,
+            criteria,
+            due_date,
+            unit_id,
+            max_attempts, 
+            allow_late)
         return redirect(url_for("views.teacher_assessments"))
     return render_template("edit_assessment.html", assessment=assessment, units=units)
 

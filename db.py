@@ -26,6 +26,7 @@ def get_all_assessments():
             a.title,
             a.description,
             a.due_date,
+            a.max_attempts,
             a.status,
             a.allow_late,
             a.unit_id,
@@ -52,6 +53,7 @@ def get_assessment_by_id(assessment_id):
             a.description,
             a.criteria,
             a.due_date,
+            a.max_attempts,
             a.status,
             a.allow_late,
             a.unit_id,
@@ -80,6 +82,7 @@ def get_published_assessments():
             a.description,
             a.criteria,
             a.due_date,
+            a.max_attempts,
             a.status,
             a.allow_late,
             a.unit_id,
@@ -115,31 +118,48 @@ def get_all_units():
     connection.close()
     return units
 
-def create_assessment(title, description, criteria, due_date, unit_id, allow_late=False):
+def create_assessment(title, description, criteria, due_date, unit_id, allow_late=False, max_attempts):
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(
         """
-        INSERT INTO assessments (title, description, criteria, due_date, unit_id, allow_late)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO assessments (
+            title, description, criteria, due_date, unit_id, max_attempts, allow_late)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """,
-        (title, description, criteria, due_date, unit_id, allow_late)
+        (title, description, criteria, due_date, unit_id, max_attempts, allow_late)
     )
     connection.commit()
     cursor.close()
     connection.close()
 
-def update_assessment(assessment_id, title, description, criteria, due_date, unit_id, allow_late=False):
+def update_assessment(
+    assessment_id, title, description, criteria, due_date, unit_id, max_attempts, allow_late=False):
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(
         """
         UPDATE assessments
-        SET title = %s, description = %s, criteria = %s, due_date = %s, unit_id = %s, allow_late=%s
+        SET title = %s,
+            description = %s,
+            criteria = %s,
+            due_date = %s,
+            unit_id = %s,
+            max_attempts = %s, 
+            allow_late=%s
         WHERE assessment_id = %s
         AND status = 'Draft'
         """,
-        (title, description, criteria, due_date, unit_id, allow_late, assessment_id)
+        (
+            title,
+            description,
+            criteria,
+            due_date,
+            unit_id,
+            max_attempts,
+            allow_late, 
+            assessment_id
+        )
     )
     connection.commit()
     cursor.close()

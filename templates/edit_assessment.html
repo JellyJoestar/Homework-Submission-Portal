@@ -18,6 +18,10 @@
                 required
             >
         </div>
+        <div class="form-field">
+            <label for="allow_late">Allow late submissions</label>
+                <input type="checkbox" id="allow_late" name="allow_late" style="width: 20px; height: 20px;" value="{{ 'checked' if assessment.allow_late else '' }}">
+        </div>
         <div class="form-field form-field-wide">
             <label for="description">Description</label>
             <textarea

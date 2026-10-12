@@ -5,6 +5,22 @@ from models import User
 
 load_dotenv()
 
+
+class AssessmentNotFoundError(Exception):
+    """Raised when an attempted submission targets a missing assessment."""
+
+
+class AssessmentNotPublishedError(Exception):
+    """Raised when an assessment stops accepting submissions."""
+
+
+class AttemptLimitReachedError(Exception):
+    """Raised when a successful submission would exceed max_attempts."""
+
+
+class SubmissionCommitOutcomeUnknownError(Exception):
+    """Raised when MySQL may have committed despite a connection failure."""
+
 def get_db_connection():
     connection = mysql.connector.connect(
         host=os.getenv("DB_HOST"),
@@ -280,27 +296,113 @@ def delete_assessment_resource(resource_id, assessment_id):
     cursor.close()
     connection.close()
 
-def create_submission(assessment_id, student_id, original_filename, stored_filename):
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-        INSERT INTO submissions (
-            assessment_id,
-            student_id,
-            original_filename,
-            stored_filename
-        )
-        VALUES (%s, %s, %s, %s)
-        """,
-        (assessment_id, student_id, original_filename, stored_filename)
-    )
+def save_submission_attempt(
+    assessment_id, student_id, original_filename, stored_filename
+):
+    """Atomically create or replace the student's current submission.
 
-    submission_id = cursor.lastrowid
-    connection.commit()
-    cursor.close()
-    connection.close()
-    return submission_id
+    Locking the assessment row serializes first submissions and resubmissions for
+    the same assessment across application instances. The unique submission key
+    remains the final database safeguard for one current row per student.
+    """
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    committed = False
+    try:
+        connection.start_transaction()
+        cursor.execute(
+            """
+            SELECT assessment_id, status, max_attempts
+            FROM assessments
+            WHERE assessment_id = %s
+            FOR UPDATE
+            """,
+            (assessment_id,)
+        )
+        assessment = cursor.fetchone()
+        if not assessment:
+            raise AssessmentNotFoundError
+        if assessment["status"] != "Published":
+            raise AssessmentNotPublishedError
+
+        cursor.execute(
+            """
+            SELECT submission_id, stored_filename, attempt_count
+            FROM submissions
+            WHERE assessment_id = %s
+            AND student_id = %s
+            FOR UPDATE
+            """,
+            (assessment_id, student_id)
+        )
+        submission = cursor.fetchone()
+
+        if submission:
+            if (
+                assessment["max_attempts"] != 0
+                and submission["attempt_count"] >= assessment["max_attempts"]
+            ):
+                raise AttemptLimitReachedError
+
+            next_attempt_count = submission["attempt_count"] + 1
+            cursor.execute(
+                """
+                UPDATE submissions
+                SET original_filename = %s,
+                    stored_filename = %s,
+                    attempt_count = attempt_count + 1,
+                    status = 'Submitted',
+                    submitted_at = CURRENT_TIMESTAMP
+                WHERE submission_id = %s
+                """,
+                (original_filename, stored_filename, submission["submission_id"])
+            )
+            submission_id = submission["submission_id"]
+            replaced_stored_filename = submission["stored_filename"]
+        else:
+            next_attempt_count = 1
+            cursor.execute(
+                """
+                INSERT INTO submissions (
+                    assessment_id,
+                    student_id,
+                    original_filename,
+                    stored_filename,
+                    attempt_count
+                )
+                VALUES (%s, %s, %s, %s, 1)
+                """,
+                (assessment_id, student_id, original_filename, stored_filename)
+            )
+            submission_id = cursor.lastrowid
+            replaced_stored_filename = None
+
+        try:
+            connection.commit()
+        except Exception as error:
+            raise SubmissionCommitOutcomeUnknownError from error
+        committed = True
+        return {
+            "submission_id": submission_id,
+            "attempt_count": next_attempt_count,
+            "replaced_stored_filename": replaced_stored_filename,
+        }
+    except Exception:
+        if not committed:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+        raise
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        try:
+            connection.close()
+        except Exception:
+            pass
 
 def get_submissions_by_student(student_id):
     connection = get_db_connection()
@@ -313,6 +415,7 @@ def get_submissions_by_student(student_id):
             s.student_id,
             s.original_filename,
             s.stored_filename,
+            s.attempt_count,
             s.status,
             s.mark,
             s.feedback,
@@ -347,6 +450,7 @@ def get_submission_by_id(submission_id, student_id):
             s.student_id,
             s.original_filename,
             s.stored_filename,
+            s.attempt_count,
             s.status,
             s.mark,
             s.feedback,
@@ -381,6 +485,7 @@ def get_submissions_by_assessment(assessment_id):
             s.student_id,
             s.original_filename,
             s.stored_filename,
+            s.attempt_count,
             s.status,
             s.submitted_at,
             CONCAT(st.first_name, ' ', st.last_name) AS student_name,
@@ -415,6 +520,7 @@ def get_submission_for_teacher(submission_id):
             s.student_id,
             s.original_filename,
             s.stored_filename,
+            s.attempt_count,
             s.status,
             s.mark,
             s.feedback,
@@ -470,6 +576,7 @@ def get_submission_by_assessment_and_student(assessment_id, student_id):
             student_id,
             original_filename,
             stored_filename,
+            attempt_count,
             status,
             submitted_at
         FROM submissions

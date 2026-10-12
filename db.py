@@ -118,7 +118,7 @@ def get_all_units():
     connection.close()
     return units
 
-def create_assessment(title, description, criteria, due_date, unit_id, allow_late=False, max_attempts):
+def create_assessment(title, description, criteria, due_date, unit_id, max_attempts, allow_late=False):
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(
@@ -146,7 +146,7 @@ def update_assessment(
             due_date = %s,
             unit_id = %s,
             max_attempts = %s, 
-            allow_late=%s
+            allow_late = %s
         WHERE assessment_id = %s
         AND status = 'Draft'
         """,

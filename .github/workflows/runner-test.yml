@@ -1,0 +1,22 @@
+
+name: Server 1 Self-Hosted Runner Test
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  runner-test:
+    name: Verify EC2 Runner
+    runs-on: [self-hosted, Linux, X64, Server-1]
+    timeout-minutes: 3
+
+    steps:
+      - name: Verify Runner Environment
+        run: |
+          echo "Runner test started"
+          whoami
+          hostname
+          uname -s
+          echo "Runner test completed"

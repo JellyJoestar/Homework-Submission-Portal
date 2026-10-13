@@ -32,3 +32,82 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest -v
+  api-tests:
+    name: API tests (Postman)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Throwaway MySQL for this job only, loaded with the schema and demo accounts
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_NAME: homework_portal
+      DB_USER: homework_portal
+      DB_PASSWORD: homework_portal   # local-only user created by database/homework-portal.sql
+      FLASK_SECRET_KEY: ci-only-throwaway-key
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python '3.12'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Load the database schema and demo accounts
+        run: mysql -h 127.0.0.1 -P 3306 -u root -proot < database/homework-portal.sql
+
+      - name: Start the app
+        run: |
+          nohup python -m flask --app app run --port 5000 > flask.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:5000/login; then
+              echo "App is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat flask.log
+          exit 1
+
+      - name: Install the Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/unix.sh" | sh
+          postman --version
+
+      - name: Run the Postman collection
+        env:
+          DEMO_PASSWORD: Password123!   # demo accounts from database/homework-portal.sql (CI database only)
+        run: |
+          postman collection run "postman/collections/Homework Submission Portal" \
+            -e postman/environments/local.environment.yaml \
+            --env-var "baseUrl=http://127.0.0.1:5000" \
+            --env-var "teacherEmail=teacher@portal.edu.au" \
+            --env-var "teacherPassword=$DEMO_PASSWORD" \
+            --env-var "studentEmail=student1@portal.edu.au" \
+            --env-var "studentPassword=$DEMO_PASSWORD"
+
+      - name: Show the app log
+        if: failure()
+        run: cat flask.log

@@ -172,7 +172,7 @@ def student_submit_assessment(assessment_id):
     now = datetime.now()
     due_date = assessment.get("due_date")
     if not context.validate_submission(now, due_date):
-        return "Late submissions are not allowed.", 403
+        return "The due date has passed. Late submissions are not allowed.", 403
     if "submission_file" not in request.files:
         return "No submission file provided.", 400
     file = request.files["submission_file"]

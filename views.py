@@ -41,6 +41,7 @@ from db import (
 )
 from auth import redirect_for_role
 from decorators import student_required, teacher_required
+from policies import get_submission_policy, SubmissionContext
 
 views = Blueprint("views", __name__)
 RESOURCE_UPLOAD_FOLDER = os.path.join(
@@ -160,6 +161,12 @@ def student_submit_assessment(assessment_id):
         return "Assessment not found.", 404
     if assessment["status"] != "Published":
         return "Submissions are only available for published assessments.", 403
+    policy = get_submission_policy(assessment.get("allow_late", False))
+    context = SubmissionContext(policy)
+    now = datetime.now()
+    due_date = assessment.get("due_date")
+    if not context.validate_submission(now, due_date):
+        return "Late submissions are not allowed.", 403
     if "submission_file" not in request.files:
         return "No submission file provided.", 400
     file = request.files["submission_file"]

@@ -576,7 +576,7 @@ To add or change requests:
 5. Commit the files under `postman/` and open a pull request. Two checks run:
    - **Postman / postman workspace lint** checks the file format.
    - **Pytest_CI / API tests (Postman)** starts the app with a throwaway MySQL (schema and demo accounts) and runs the whole collection. A failing test fails the pull request.
-6. After the pull request is merged, the **Postman / postman workspace push** job pushes the collection to the cloud workspace with the `POSTMAN_API_KEY` secret.
+6. After the pull request is merged, the **Postman / publish to Postman (main only)** job pushes the collection to the cloud workspace with the `POSTMAN_API_KEY` secret.
 
 Do not edit requests directly in the Cloud View: the next push from `main` overwrites them.
 

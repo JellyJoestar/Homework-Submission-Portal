@@ -41,7 +41,7 @@ jobs:
         run: postman workspace lint
 
   publish:
-    name: postman workspace push
+    name: publish to Postman (main only)
     needs: lint
     if: github.event_name == 'push'
     runs-on: ubuntu-latest

@@ -35,4 +35,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o ConnectTimeout=5 \
             ifn636deploy@172.31.78.128 \
-            'test "$(whoami)" = "ifn636deploy" && test -w /opt/homework-portal && echo "Server 2 deployment path: PASS"
+            'test "$(whoami)" = "ifn636deploy" && test -w /opt/homework-portal && echo "Server 2 deployment path: PASS"'

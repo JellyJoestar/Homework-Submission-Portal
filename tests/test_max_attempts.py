@@ -52,7 +52,7 @@ def test_create_accepts_nonnegative_mysql_int_values(
     )
 
     assert response.status_code == 302
-    assert saved[0][-1] == expected
+    assert saved[0][-2] == expected
 
 
 def test_create_defaults_missing_max_attempts_to_one(teacher_client, monkeypatch):
@@ -65,7 +65,7 @@ def test_create_defaults_missing_max_attempts_to_one(teacher_client, monkeypatch
     )
 
     assert response.status_code == 302
-    assert saved[0][-1] == 1
+    assert saved[0][-2] == 1
 
 
 @pytest.mark.parametrize(
@@ -102,7 +102,7 @@ def test_edit_persists_max_attempts_for_a_draft(teacher_client, monkeypatch):
 
     assert response.status_code == 302
     assert saved[0][0] == 7
-    assert saved[0][-1] == 4
+    assert saved[0][-2] == 4
 
 
 def test_edit_preserves_existing_limit_when_max_attempts_is_missing(
@@ -122,7 +122,7 @@ def test_edit_preserves_existing_limit_when_max_attempts_is_missing(
     )
 
     assert response.status_code == 302
-    assert saved[0][-1] == 3
+    assert saved[0][-2] == 3
 
 
 def test_edit_rejects_invalid_max_attempts(teacher_client, monkeypatch):
@@ -242,7 +242,7 @@ def test_database_create_persists_max_attempts(monkeypatch):
     db.create_assessment("Title", "Description", "Criteria", None, 1, 8)
 
     assert "max_attempts" in connection.cursor_instance.query
-    assert connection.cursor_instance.params[-1] == 8
+    assert connection.cursor_instance.params[-2] == 8
     assert connection.committed
 
 
@@ -261,5 +261,5 @@ def test_database_read_and_draft_only_update_include_max_attempts(monkeypatch):
 
     assert "max_attempts = %s" in update_connection.cursor_instance.query
     assert "AND status = 'Draft'" in update_connection.cursor_instance.query
-    assert update_connection.cursor_instance.params[-2:] == (9, 7)
+    assert update_connection.cursor_instance.params[-3:] == (9, False, 7)
     assert update_connection.committed

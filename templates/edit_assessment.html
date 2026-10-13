@@ -20,7 +20,7 @@
         </div>
         <div class="form-field">
             <label for="allow_late">Allow late submissions</label>
-                <input type="checkbox" id="allow_late" name="allow_late" style="width: 20px; height: 20px;" value="{{ 'checked' if assessment.allow_late else '' }}">
+                <input type="checkbox" id="allow_late" name="allow_late" style="width: 20px; height: 20px;" {% if assessment.allow_late %}checked{% endif %}>
         </div>
         <div class="form-field form-field-wide">
             <label for="description">Description</label>

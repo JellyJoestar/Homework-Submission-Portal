@@ -557,6 +557,37 @@ def test_student_sees_published_assessments(student_client, monkeypatch):
     assert response.status_code == 200
 ```
 
+### Postman Workflow (API Tests)
+
+The Postman collection lives in this repository as YAML files (Postman Native Git), so requests are reviewed in pull requests like code.
+
+| Path | Purpose |
+|---|---|
+| `postman/collections/` | One folder per collection, one `.request.yaml` file per request |
+| `postman/environments/` | Environments with **placeholder values only** |
+| `.postman/resources.yaml` | Links this folder to the team's Postman Cloud workspace |
+
+To add or change requests:
+
+1. Pull `main` and create a branch, for example `git checkout -b feature/IFN636-xx-postman-requests`.
+2. Open Postman desktop (v12 or later), select **Open Folder**, and choose the root of this repository. The current Git branch is shown in the footer.
+3. Add or edit requests in the **Local View**. Postman saves them as files under `postman/`.
+4. Put real values (passwords) in the environment's **current value** only. Current values stay on your machine and are never committed.
+5. Commit the files under `postman/` and open a pull request. Two checks run:
+   - **Postman / postman workspace lint** checks the file format.
+   - **Pytest_CI / API tests (Postman)** starts the app with a throwaway MySQL (schema and demo accounts) and runs the whole collection. A failing test fails the pull request.
+6. After the pull request is merged, the **Postman / postman workspace push** job pushes the collection to the cloud workspace with the `POSTMAN_API_KEY` secret.
+
+Do not edit requests directly in the Cloud View: the next push from `main` overwrites them.
+
+The app uses a session cookie with a CSRF-protected login form. Run the `Auth` folder first (or the whole collection): **Log in as teacher** saves `teacher_session` and **Log in as student** saves `student_session`, so both roles can be used in the same run. For a new request that needs a logged-in user:
+
+1. Add the header `Cookie: session={{teacher_session}}` or `Cookie: session={{student_session}}`.
+2. Turn on **Disable cookie jar** in the request settings.
+3. Put it in the `Teacher` or `Student` folder (or a folder for your feature).
+
+On macOS, use `http://127.0.0.1:5000`, not `localhost:5000`: AirPlay Receiver also listens on port 5000 and can answer `localhost` requests instead of Flask.
+
 ---
 
 ## 14. Production Deployment Architecture

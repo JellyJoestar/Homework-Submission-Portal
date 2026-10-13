@@ -128,6 +128,11 @@ def student_assessment_details(assessment_id):
     if assessment["status"] != "Published":
         return "Assessment is not available to students.", 403
     resources = get_resources_by_assessment(assessment_id)
+    policy = get_submission_policy(assessment.get("allow_late", False))
+    context = SubmissionContext(policy)
+    now = datetime.now()
+    due_date = assessment.get("due_date")
+    can_submit = context.validate_submission(now, due_date)
     submission = get_submission_by_assessment_and_student(
         assessment_id, current_user.id
     )
@@ -150,6 +155,7 @@ def student_assessment_details(assessment_id):
         remaining_attempts=remaining_attempts,
         unlimited_attempts=unlimited_attempts,
         submission_limit_reached=submission_limit_reached,
+        can_submit=can_submit,
     )
 
 @views.route("/student/assessments/<int:assessment_id>/submit",methods=["POST"])

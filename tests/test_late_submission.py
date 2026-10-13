@@ -88,6 +88,7 @@ def test_blocked_message_after_due_date(student_client, monkeypatch):
                        }
     monkeypatch.setattr(views, "get_assessment_by_id", lambda *args: fake_assessment)
     monkeypatch.setattr(views, "get_resources_by_assessment", lambda *args: [])
+    monkeypatch.setattr(views, "get_submission_by_assessment_and_student", lambda *args: None)
     
     # Act
     response = student_client.get("/student/assessments/2")

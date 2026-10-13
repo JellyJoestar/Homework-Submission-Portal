@@ -1,0 +1,4 @@
+$kind: collection
+name: Teacher
+description: Teacher pages. Run the Auth folder first.
+order: 2000

@@ -38,6 +38,7 @@ CREATE TABLE assessments (
     criteria TEXT,
     due_date DATETIME,
     unit_id INT NOT NULL,
+    allow_late BOOLEAN NOT NULL DEFAULT FALSE,
     max_attempts INT NOT NULL DEFAULT 1,
     status VARCHAR(20) NOT NULL DEFAULT 'Draft',
     CONSTRAINT chk_assessments_max_attempts_nonnegative

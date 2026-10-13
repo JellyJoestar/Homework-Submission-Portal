@@ -32,6 +32,11 @@
 </div>
 
 <div class="detail-row">
+    <strong>Late Submissions:</strong>
+    {{ "Allowed" if assessment.allow_late else "Not Allowed" }}
+</div>
+
+<div class="detail-row">
     <strong>Maximum attempts:</strong>
     {{ "Unlimited" if assessment.max_attempts == 0 else assessment.max_attempts }}
 </div>

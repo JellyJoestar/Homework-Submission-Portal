@@ -323,6 +323,7 @@ def create_new_assessment():
     criteria = (request.form.get("criteria") or "").strip()
     due_date_raw = request.form.get("due_date") or ""
     unit_id_raw = request.form.get("unit_id")
+    allow_late = bool(request.form.get("allow_late"))
     try:
         max_attempts = parse_max_attempts(request.form.get("max_attempts"))
     except ValueError:
@@ -346,8 +347,7 @@ def create_new_assessment():
     else:
         due_date = None
     create_assessment(
-        title, description, criteria, due_date, unit_id, max_attempts
-    )
+        title, description, criteria, due_date, unit_id, max_attempts, allow_late)
     return redirect(url_for("views.teacher_assessments"))
 
 @views.route("/teacher/assessments/<int:assessment_id>/edit", methods=["GET", "POST"])
@@ -365,6 +365,7 @@ def edit_assessment(assessment_id):
         criteria = (request.form.get("criteria") or "").strip()
         due_date_raw = request.form.get("due_date") or ""
         unit_id_raw = request.form.get("unit_id")
+        allow_late = bool(request.form.get("allow_late"))
         max_attempts_raw = request.form.get("max_attempts")
         if max_attempts_raw is None:
             max_attempts = assessment["max_attempts"]
@@ -396,8 +397,8 @@ def edit_assessment(assessment_id):
             criteria,
             due_date,
             unit_id,
-            max_attempts
-        )
+            max_attempts, 
+            allow_late)
         return redirect(url_for("views.teacher_assessments"))
     return render_template("edit_assessment.html", assessment=assessment, units=units)
 

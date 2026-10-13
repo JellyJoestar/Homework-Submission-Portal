@@ -567,18 +567,46 @@ The Postman collection lives in this repository as YAML files (Postman Native Gi
 | `postman/environments/` | Environments with **placeholder values only** |
 | `.postman/resources.yaml` | Links this folder to the team's Postman Cloud workspace |
 
-To add or change requests:
+#### First-time setup (each teammate, once)
+
+Postman only opens a folder in a workspace you belong to, and `.postman/resources.yaml` points to the team workspace. Each teammate opens the repository in their **own** free Postman workspace instead:
+
+1. Clone the repository.
+2. Delete `.postman/resources.yaml` on your machine (not in a commit).
+3. In Postman desktop (v12 or later): **Workspaces** → **Create Workspace** → **Internal** → **From a local folder** → choose the root of this repository. Postman writes your own workspace id in `.postman/resources.yaml`. Do not push to the cloud from the app.
+4. Tell Git to ignore that local change, so it is never committed:
+
+   ```bash
+   git update-index --skip-worktree .postman/resources.yaml
+   ```
+
+   `git status` should be clean again.
+
+#### Adding or changing requests
 
 1. Pull `main` and create a branch, for example `git checkout -b feature/IFN636-xx-postman-requests`.
-2. Open Postman desktop (v12 or later), select **Open Folder**, and choose the root of this repository. The current Git branch is shown in the footer.
+2. Open your workspace in Postman desktop. The current Git branch is shown in the footer.
 3. Add or edit requests in the **Local View**. Postman saves them as files under `postman/`.
 4. Put real values (passwords) in the environment's **current value** only. Current values stay on your machine and are never committed.
 5. Commit the files under `postman/` and open a pull request. Two checks run:
-   - **Postman / postman workspace lint** checks the file format.
+   - **Postman / postman workspace lint** checks that the team workspace id was not changed, then checks the file format.
    - **Pytest_CI / API tests (Postman)** starts the app with a throwaway MySQL (schema and demo accounts) and runs the whole collection. A failing test fails the pull request.
 6. After the pull request is merged, the **Postman / publish to Postman (main only)** job pushes the collection to the cloud workspace with the `POSTMAN_API_KEY` secret.
 
 Do not edit requests directly in the Cloud View: the next push from `main` overwrites them.
+
+#### If the workspace id check fails
+
+Your workspace id was committed. Put the team id back in the branch without changing your local file, then push again:
+
+```bash
+git restore --source=origin/main --staged .postman/resources.yaml
+git commit -m "chore: keep the team Postman workspace id"
+git update-index --skip-worktree .postman/resources.yaml
+git push
+```
+
+#### Sending a logged-in session
 
 The app uses a session cookie with a CSRF-protected login form. Run the `Auth` folder first (or the whole collection): **Log in as teacher** saves `teacher_session` and **Log in as student** saves `student_session`, so both roles can be used in the same run. For a new request that needs a logged-in user:
 

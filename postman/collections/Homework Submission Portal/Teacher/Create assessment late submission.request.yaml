@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/teacher/assessments"
+method: POST
+body:
+  type: urlencoded
+  content:
+    title: " Create assessment with late submission setting"
+    description: " Testing allow_late"
+    criteria: " Criteria"
+    due_date: 2026-10-31T12:00
+    unit_id: " 1"
+    allow_late: " on"
+order: 2000

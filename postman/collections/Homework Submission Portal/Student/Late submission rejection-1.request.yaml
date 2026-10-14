@@ -2,6 +2,8 @@ $kind: http-request
 name: Late submission rejection
 url: "{{baseUrl}}/student/assessments/3/submit"
 method: POST
+headers:
+  Cookie: session={{student_session}}
 body:
   type: formdata
   content:

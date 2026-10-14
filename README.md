@@ -569,18 +569,26 @@ The Postman collection lives in this repository as YAML files (Postman Native Gi
 
 #### First-time setup (each teammate, once)
 
-Postman only opens a folder in a workspace you belong to, and `.postman/resources.yaml` points to the team workspace. Each teammate opens the repository in their **own** free Postman workspace instead:
+Postman only opens a folder in a workspace you belong to. It finds the workspace from `.postman/resources.yaml` and also from the repository's `origin` URL, and both point to the team workspace. Each teammate opens the repository in their **own** free Postman workspace instead:
 
 1. Clone the repository.
-2. Delete `.postman/resources.yaml` on your machine (not in a commit).
-3. In Postman desktop (v12 or later): **Workspaces** → **Create Workspace** → **Internal** → **From a local folder** → choose the root of this repository. Postman writes your own workspace id in `.postman/resources.yaml`. Do not push to the cloud from the app.
-4. Tell Git to ignore that local change, so it is never committed:
+2. In the root of the repository, delete the file (not in a commit) and hide the `origin` remote for a moment:
 
    ```bash
+   rm .postman/resources.yaml
+   git remote rename origin upstream
+   ```
+
+   `.postman` is a hidden folder, so use the terminal, not Finder or Explorer.
+3. In Postman desktop (v12 or later): **Workspaces** → **Create Workspace** → **Internal** → **From a local folder** → choose the root of this repository → **Create Workspace**. Postman writes your own workspace id in `.postman/resources.yaml`. Do not push to the cloud from the app.
+4. Put the remote back and tell Git to ignore the local change to that file, so it is never committed:
+
+   ```bash
+   git remote rename upstream origin
    git update-index --skip-worktree .postman/resources.yaml
    ```
 
-   `git status` should be clean again.
+   `git status` should be clean again. Postman keeps opening the workspace normally after this.
 
 #### Adding or changing requests
 
@@ -613,6 +621,8 @@ The app uses a session cookie with a CSRF-protected login form. Run the `Auth` f
 1. Add the header `Cookie: session={{teacher_session}}` or `Cookie: session={{student_session}}`.
 2. Turn on **Disable cookie jar** in the request settings.
 3. Put it in the `Teacher` or `Student` folder (or a folder for your feature).
+
+Requests that log out go in the `Logout` folder, which runs last: logging out in the middle of a run would leave the requests after it without a session. Requests without a session (for example, checking that a page redirects to the login form) go in the `Anonymous` folder.
 
 On macOS, use `http://127.0.0.1:5000`, not `localhost:5000`: AirPlay Receiver also listens on port 5000 and can answer `localhost` requests instead of Flask.
 

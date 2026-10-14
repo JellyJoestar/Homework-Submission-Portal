@@ -1,0 +1,20 @@
+name: local
+values:
+  - key: baseUrl
+    value: 'http://127.0.0.1:5000'
+  - key: teacherEmail
+    value: ''
+  - key: teacherPassword
+    value: ''
+  - key: studentEmail
+    value: ''
+  - key: studentPassword
+    value: ''
+  - key: csrf_token
+    value: ''
+  - key: session_cookie
+    value: ''
+  - key: teacher_session
+    value: ''
+  - key: student_session
+    value: ''

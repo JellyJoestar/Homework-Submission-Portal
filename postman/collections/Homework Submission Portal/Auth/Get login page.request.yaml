@@ -1,0 +1,40 @@
+$kind: http-request
+description: |-
+  Opens the login form with a fresh session, then saves the form's CSRF token  
+  and the session cookie to the environment. The login POST needs both.
+method: GET
+url: "{{baseUrl}}/login"
+order: 1000
+settings:
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Content-Type is present", function () {
+          pm.response.to.have.header("Content-Type");
+      });
+
+      pm.test("Response time is less than 500ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(500);
+      });
+
+      // Save the CSRF token and the session cookie to environment variables
+      const token = pm.response.text().match(/name="csrf_token" type="hidden" value="([^"]+)"/);
+      const session = (pm.response.headers.get("Set-Cookie") || "").match(/session=([^;]+)/);
+
+      pm.test("Login form includes a CSRF token", function () {
+          pm.expect(token, "csrf_token input").to.not.be.null;
+      });
+
+      if (token && session) {
+          pm.environment.set("csrf_token", token[1]);
+          pm.environment.set("session_cookie", session[1]);
+          console.log("CSRF token and session cookie saved to environment");
+      } else {
+          console.warn("No CSRF token or session cookie found in response!");
+      }
+    language: text/javascript

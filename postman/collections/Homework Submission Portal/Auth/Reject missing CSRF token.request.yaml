@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  Negative test: valid credentials without the CSRF token must be rejected
+  with 400, so the login form can't be posted from another site.
+method: POST
+url: "{{baseUrl}}/login"
+order: 1750
+headers:
+  Cookie: session={{session_cookie}}
+body:
+  type: urlencoded
+  content:
+    email: "{{teacherEmail}}"
+    password: "{{teacherPassword}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 400 (missing CSRF token)", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("Does not log the user in", function () {
+          pm.response.to.not.have.header("Location");
+      });

@@ -1,0 +1,4 @@
+$kind: collection
+name: Auth
+description: Logs in with the session cookie flow. Run these two requests in order.
+order: 1000

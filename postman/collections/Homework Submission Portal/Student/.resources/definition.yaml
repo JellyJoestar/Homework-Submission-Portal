@@ -1,0 +1,4 @@
+$kind: collection
+name: Student
+description: Student pages. Run "Auth / Log in as student" first (or the whole collection).
+order: 3000

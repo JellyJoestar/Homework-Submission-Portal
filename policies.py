@@ -39,7 +39,7 @@ class SubmissionContext:
         return self.policy.is_submission_allowed(current_time, due_date)
 
 # Helper
-def get_submission_policy(allow_late) -> bool:
+def get_submission_policy(allow_late) -> SubmissionPolicy:
     if allow_late:
         return AllowLatePolicy()
     return NotAllowLatePolicy()

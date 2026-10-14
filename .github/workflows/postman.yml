@@ -1,0 +1,74 @@
+name: Postman
+
+# Keeps the Postman Cloud workspace in sync with the files in postman/ and .postman/.
+#   Pull request -> check the workspace id and lint the files.
+#   Push to main  -> lint, then push them to the workspace set in .postman/resources.yaml.
+# The push is made with the POSTMAN_API_KEY secret.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "postman/**"
+      - ".postman/**"
+  push:
+    branches: [main]
+    paths:
+      - "postman/**"
+      - ".postman/**"
+
+permissions:
+  contents: read
+
+# Never run two pushes to the cloud workspace at the same time
+concurrency:
+  group: postman-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    name: postman workspace lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      # Teammates open the folder in their own Postman workspace, which writes their
+      # workspace id in this file. Only the team workspace id may be committed.
+      - name: Check the team workspace id
+        env:
+          TEAM_WORKSPACE_ID: d62cd545-4595-4672-a722-ef90f873bea9
+        run: |
+          if ! grep -q "id: $TEAM_WORKSPACE_ID" .postman/resources.yaml; then
+            echo "::error file=.postman/resources.yaml::The workspace id was changed. Keep the team workspace id (see README, Postman Workflow, 'If the workspace id check fails')."
+            exit 1
+          fi
+
+      - name: Install the Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/unix.sh" | sh
+          postman --version
+
+      - name: Lint the workspace
+        run: postman workspace lint
+
+  publish:
+    name: publish to Postman (main only)
+    needs: lint
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/unix.sh" | sh
+          postman --version
+
+      - name: Log in to Postman
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+        run: postman login --with-api-key "$POSTMAN_API_KEY"
+
+      - name: Push to Postman Cloud
+        run: postman workspace push -y

@@ -1,0 +1,23 @@
+$kind: collection
+name: Homework Submission Portal
+description: |-
+  Requests for the Homework Submission Portal (Flask, server-side rendered).
+
+  The app uses a session cookie instead of a JWT, but the pattern is the same
+  as Tutorial 10: a login request saves the token to the environment, and
+  later requests send it in a header.
+
+  Auth folder (run first, or run the whole collection):
+  - Get login page + two negative tests (wrong password 401, no CSRF 400)
+  - Log in as teacher -> saves teacher_session
+  - Log in as student -> saves student_session
+
+  Teacher requests send  Cookie: session={{teacher_session}}
+  Student requests send  Cookie: session={{student_session}}
+  Both sessions work in the same run (e.g. a teacher publishes, a student submits).
+
+  Every request has "Disable cookie jar" on, so only the header is used
+  (the Postman CLI ignores the cookie jar for this collection format anyway).
+
+  Set baseUrl and the demo emails and passwords in the "local" environment,
+  as current values only (they stay on your machine and are never committed).

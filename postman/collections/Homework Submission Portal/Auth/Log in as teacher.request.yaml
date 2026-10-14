@@ -1,0 +1,60 @@
+$kind: http-request
+description: |-
+  Logs in as the demo teacher and saves the logged-in session to `teacher_session`.
+  Requests for teacher pages send it in the header  Cookie: session={{teacher_session}}
+
+  Self-contained: before sending, it opens the login page to get a fresh
+  CSRF token and session, so it also works with a single Send.
+method: POST
+url: "{{baseUrl}}/login"
+order: 2000
+headers:
+  Cookie: session={{session_cookie}}
+body:
+  type: urlencoded
+  content:
+    email: "{{teacherEmail}}"
+    password: "{{teacherPassword}}"
+    csrf_token: "{{csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      // Open the login form first: the POST needs its CSRF token and session
+      pm.sendRequest(pm.variables.replaceIn("{{baseUrl}}/login"), function (err, res) {
+          if (err) {
+              console.warn("Could not open the login page:", err);
+              return;
+          }
+          const token = res.text().match(/name="csrf_token" type="hidden" value="([^"]+)"/);
+          const session = (res.headers.get("Set-Cookie") || "").match(/session=([^;]+)/);
+          if (token && session) {
+              pm.environment.set("csrf_token", token[1]);
+              pm.environment.set("session_cookie", session[1]);
+          } else {
+              console.warn("No CSRF token or session cookie found on the login page!");
+          }
+      });
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (logged in)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the teacher home page", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });
+
+      // Save the logged-in session cookie to an environment variable
+      const session = (pm.response.headers.get("Set-Cookie") || "").match(/session=([^;]+)/);
+
+      if (session) {
+          pm.environment.set("teacher_session", session[1]);
+          console.log("Logged-in teacher session saved to environment");
+      } else {
+          console.warn("No session cookie found in response!");
+      }

@@ -1,0 +1,21 @@
+$kind: http-request
+description: |-
+  Without a session, a teacher page must redirect to the login form
+  (Flask-Login login_required) and remember the page in ?next=.
+method: GET
+url: "{{baseUrl}}/teacher/assessments"
+order: 1000
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (not logged in)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the login form and back to this page", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/login?next=%2Fteacher%2Fassessments");
+      });

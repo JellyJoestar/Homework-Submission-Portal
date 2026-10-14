@@ -1,0 +1,4 @@
+$kind: collection
+name: Anonymous
+description: Protected pages opened without logging in. No session needed.
+order: 4000

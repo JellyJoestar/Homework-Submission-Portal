@@ -18,3 +18,5 @@ values:
     value: ''
   - key: student_session
     value: ''
+  - key: logged_out_session
+    value: ''

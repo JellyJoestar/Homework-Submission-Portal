@@ -1,0 +1,19 @@
+$kind: http-request
+description: Publishes the dynamically discovered graded-resubmission assessment.
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_107_assessment_id_graded}}/publish"
+order: 1700
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Graded-resubmission assessment is published", function () {
+          const id = pm.environment.get("ifn636_107_assessment_id_graded");
+          pm.response.to.have.status(302);
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments/" + id);
+      });

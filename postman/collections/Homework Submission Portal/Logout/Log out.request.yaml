@@ -1,0 +1,36 @@
+$kind: http-request
+description: |-
+  Logs out the student session saved by "Auth / Log in as student".
+  Saves the session cookie the app sends back to `logged_out_session`:
+  that is the cookie the browser keeps after logging out.
+method: POST
+url: "{{baseUrl}}/logout"
+order: 1000
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (logged out)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the login form", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/login");
+      });
+
+      // Save the session cookie the browser would keep after logging out
+      const session = (pm.response.headers.get("Set-Cookie") || "").match(/session=([^;]+)/);
+
+      pm.test("Sends a new session cookie", function () {
+          pm.expect(session, "Set-Cookie: session=...").to.not.be.null;
+          pm.expect(session[1]).to.not.equal(pm.environment.get("student_session"));
+      });
+
+      if (session) {
+          pm.environment.set("logged_out_session", session[1]);
+      }

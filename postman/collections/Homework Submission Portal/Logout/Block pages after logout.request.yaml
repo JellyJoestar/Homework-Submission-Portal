@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  After logging out, the session the browser keeps can't open student pages:
+  it redirects to the login form like an anonymous user.
+method: GET
+url: "{{baseUrl}}/student"
+order: 2000
+headers:
+  Cookie: session={{logged_out_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (no longer logged in)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the login form", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/login?next=%2Fstudent");
+      });
+
+      pm.test("Student content is not shown", function () {
+          pm.expect(pm.response.text()).to.not.include("<h1>Student Assessments</h1>");
+      });

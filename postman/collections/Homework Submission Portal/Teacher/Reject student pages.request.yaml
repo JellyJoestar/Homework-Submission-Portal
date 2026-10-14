@@ -1,0 +1,23 @@
+$kind: http-request
+description: |-
+  Role check: a logged-in teacher must get 403 on a student page
+  (student_required decorator).
+method: GET
+url: "{{baseUrl}}/student"
+order: 2000
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 403 (teachers can't open student pages)", function () {
+          pm.response.to.have.status(403);
+      });
+
+      pm.test("Student content is not shown", function () {
+          pm.expect(pm.response.text()).to.not.include("<h1>Student Assessments</h1>");
+      });

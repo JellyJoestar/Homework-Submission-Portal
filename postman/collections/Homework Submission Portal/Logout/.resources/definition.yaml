@@ -1,0 +1,6 @@
+$kind: collection
+name: Logout
+description: |-
+  Logs the student out and checks the session can't open student pages anymore.
+  Runs last, so the other folders keep their sessions. Run "Auth / Log in as student" first.
+order: 5000

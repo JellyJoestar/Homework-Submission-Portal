@@ -16,6 +16,12 @@ description: |-
   Student requests send  Cookie: session={{student_session}}
   Both sessions work in the same run (e.g. a teacher publishes, a student submits).
 
+  Access control:
+  - Teacher / Reject student pages and Student / Reject teacher pages -> 403
+  - Anonymous folder: protected pages without a session -> 302 to the login form
+  - Logout folder (runs last): logs the student out, then the session the
+    browser keeps can't open student pages anymore
+
   Every request has "Disable cookie jar" on, so only the header is used
   (the Postman CLI ignores the cookie jar for this collection format anyway).
 

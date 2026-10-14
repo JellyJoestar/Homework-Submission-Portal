@@ -1,0 +1,27 @@
+$kind: http-request
+url: "{{baseUrl}}/teacher/assessments"
+method: POST
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: IFN636 Postman Negative Test
+    unit_id: "1"
+    max_attempts: abc
+scripts:
+  - type: afterResponse
+    code: |
+      pm.test("Status code is 400 for non-integer max_attempts", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("Shows maximum attempts validation error", function () {
+          pm.expect(pm.response.text().trim())
+              .to.equal("Maximum attempts must be a non-negative integer.");
+      });
+    language: text/javascript
+settings:
+  followRedirects: false
+  disableCookies: true
+order: 4000

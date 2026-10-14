@@ -1,0 +1,26 @@
+$kind: http-request
+description: Omits max_attempts so the server-side default of one is exercised.
+method: POST
+url: "{{baseUrl}}/teacher/assessments"
+order: 5200
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{ifn636_limit_title_default}}"
+    unit_id: "{{ifn636_limit_unit_id}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 when max_attempts is omitted", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the Teacher assessment list", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });

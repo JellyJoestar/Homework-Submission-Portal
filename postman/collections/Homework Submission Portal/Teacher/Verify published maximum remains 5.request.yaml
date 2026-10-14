@@ -1,0 +1,34 @@
+$kind: http-request
+description: |-
+  Reads the assessment after the rejected published edit to prove maximum 5
+  remains persisted and the record remains Published.
+method: GET
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}"
+order: 6100
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const title = pm.environment.get("ifn636_limit_title_three");
+
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Detail page identifies the published assessment", function () {
+          pm.expect(html).to.include("<strong>Title:</strong> " + title);
+      });
+
+      pm.test("Rejected published edit leaves maximum attempts at 5", function () {
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 5");
+      });
+
+      pm.test("Assessment remains Published", function () {
+          pm.expect(html).to.include("<strong>Status:</strong> Published");
+      });

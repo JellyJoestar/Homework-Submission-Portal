@@ -1,0 +1,27 @@
+$kind: http-request
+description: Attempts to change maximum 5 to 9 after publication; published records are immutable.
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}/edit"
+order: 6000
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{ifn636_limit_title_three}}"
+    unit_id: "{{ifn636_limit_unit_id}}"
+    max_attempts: "9"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 400 when editing a Published assessment", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("Shows the Draft-only edit error", function () {
+          pm.expect(pm.response.text().trim()).to.equal("Only Draft assessments can be edited.");
+      });

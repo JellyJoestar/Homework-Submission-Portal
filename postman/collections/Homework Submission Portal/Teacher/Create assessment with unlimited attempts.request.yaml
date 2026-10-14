@@ -1,0 +1,27 @@
+$kind: http-request
+description: Creates a Draft assessment with zero maximum attempts (Unlimited).
+method: POST
+url: "{{baseUrl}}/teacher/assessments"
+order: 5100
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{ifn636_limit_title_unlimited}}"
+    unit_id: "{{ifn636_limit_unit_id}}"
+    max_attempts: "0"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 for unlimited attempts", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the Teacher assessment list", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });

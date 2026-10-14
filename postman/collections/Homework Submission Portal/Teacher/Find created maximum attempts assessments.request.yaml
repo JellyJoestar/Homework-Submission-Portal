@@ -1,0 +1,53 @@
+$kind: http-request
+description: |-
+  Locates each uniquely titled assessment in the authenticated Teacher list and
+  saves its real database ID for subsequent detail, edit and publish requests.
+method: GET
+url: "{{baseUrl}}/teacher/assessments"
+order: 5300
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      const html = pm.response.text();
+      const cards = Array.from(html.matchAll(/<li class="assessment-card">([\s\S]*?)<\/li>/g), function (match) {
+          return match[1];
+      });
+
+      function findIdsForTitle(title) {
+          return cards.reduce(function (ids, card) {
+              const titleMatch = card.match(/<div class="assessment-card-title">\s*([\s\S]*?)\s*<\/div>/);
+              const renderedTitle = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : "";
+              const idMatch = card.match(/href="[^"]*\/teacher\/assessments\/(\d+)"/);
+              if (renderedTitle === title && idMatch) {
+                  ids.push(idMatch[1]);
+              }
+              return ids;
+          }, []);
+      }
+
+      function saveUniqueId(titleVariable, idVariable) {
+          const title = pm.environment.get(titleVariable);
+          const ids = findIdsForTitle(title);
+          pm.test("Finds exactly one assessment for " + titleVariable, function () {
+              pm.expect(ids, "matching assessment IDs").to.have.lengthOf(1);
+          });
+          if (ids.length === 1) {
+              pm.environment.set(idVariable, ids[0]);
+          } else {
+              pm.environment.unset(idVariable);
+          }
+      }
+
+      saveUniqueId("ifn636_limit_title_three", "ifn636_limit_id_three");
+      saveUniqueId("ifn636_limit_title_unlimited", "ifn636_limit_id_unlimited");
+      saveUniqueId("ifn636_limit_title_default", "ifn636_limit_id_default");

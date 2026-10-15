@@ -33,6 +33,9 @@
     <div class="detail-row">
         <strong>Status:</strong>
         {{ submission.status }}
+        {% if submission.is_late %}
+            <span class="status-late" style="background-color:#f74848; color:white; padding: 2px 8px; border-radius: 10px; margin-left: 10px;">Late</span>
+        {% endif %}
     </div>
 
     <div class="detail-row">

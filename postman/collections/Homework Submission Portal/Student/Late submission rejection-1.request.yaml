@@ -1,0 +1,31 @@
+$kind: http-request
+name: Late submission rejection
+url: "{{baseUrl}}/student/assessments/3/submit"
+method: POST
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: submission_file
+      src: []
+      description: ""
+      disabled: false
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 403 Forbidden\", function () {\r
+
+      \    pm.response.to.have.status(403);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response contains blocked message\", function () {\r
+
+      \    pm.expect(pm.response.text()).to.include(\"The due date has passed. Late submissions are not allowed.\");\r
+
+      });"
+    language: text/javascript
+order: 3000

@@ -41,6 +41,7 @@ from db import (
 )
 from auth import redirect_for_role
 from decorators import student_required, teacher_required
+from policies import get_submission_policy, SubmissionContext
 
 views = Blueprint("views", __name__)
 RESOURCE_UPLOAD_FOLDER = os.path.join(
@@ -127,6 +128,11 @@ def student_assessment_details(assessment_id):
     if assessment["status"] != "Published":
         return "Assessment is not available to students.", 403
     resources = get_resources_by_assessment(assessment_id)
+    policy = get_submission_policy(assessment.get("allow_late", False))
+    context = SubmissionContext(policy)
+    now = datetime.now()
+    due_date = assessment.get("due_date")
+    can_submit = context.validate_submission(now, due_date)
     submission = get_submission_by_assessment_and_student(
         assessment_id, current_user.id
     )
@@ -149,6 +155,7 @@ def student_assessment_details(assessment_id):
         remaining_attempts=remaining_attempts,
         unlimited_attempts=unlimited_attempts,
         submission_limit_reached=submission_limit_reached,
+        can_submit=can_submit,
     )
 
 @views.route("/student/assessments/<int:assessment_id>/submit",methods=["POST"])
@@ -160,6 +167,12 @@ def student_submit_assessment(assessment_id):
         return "Assessment not found.", 404
     if assessment["status"] != "Published":
         return "Submissions are only available for published assessments.", 403
+    policy = get_submission_policy(assessment.get("allow_late", False))
+    context = SubmissionContext(policy)
+    now = datetime.now()
+    due_date = assessment.get("due_date")
+    if not context.validate_submission(now, due_date):
+        return "The due date has passed. Late submissions are not allowed.", 403
     if "submission_file" not in request.files:
         return "No submission file provided.", 400
     file = request.files["submission_file"]

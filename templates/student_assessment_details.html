@@ -135,7 +135,7 @@
             trigger.addEventListener("click", () => dialog.showModal());
         })();
     </script>
-{% else %}
+{% elif can_submit %}
     <form class="submission-upload-form"
         method="POST"
         action="{{ url_for('views.student_submit_assessment', assessment_id=assessment.assessment_id) }}"
@@ -159,6 +159,8 @@
             </button>
         </div>
     </form>
+{% else %}
+    <p class="error-message">The due date has passed. Late submissions are not allowed.</p>
 {% endif %}
 
     <p class="page-action">

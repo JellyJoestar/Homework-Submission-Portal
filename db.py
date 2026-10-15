@@ -31,7 +31,8 @@ def get_db_connection():
         port=int(os.getenv("DB_PORT")),
         database=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD")
+        password=os.getenv("DB_PASSWORD"),
+        time_zone="+10:00",  # Brisbane, no daylight saving
     )
 
     return connection

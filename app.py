@@ -1,4 +1,4 @@
-import os
+import os, time
 
 from flask import Flask
 from dotenv import load_dotenv
@@ -9,6 +9,10 @@ from preview.routes import preview
 
 load_dotenv()
 
+os.environ["TZ"] = "Australia/Brisbane"
+if hasattr(time, "tzset"):  # not available on Windows, where the laptop's time is used
+    time.tzset()
+    
 app = Flask(__name__)
 
 app.secret_key = os.getenv("FLASK_SECRET_KEY")

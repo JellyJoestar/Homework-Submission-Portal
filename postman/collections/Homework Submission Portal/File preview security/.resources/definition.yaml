@@ -1,0 +1,9 @@
+$kind: collection
+name: File preview security
+description: |-
+  NFR-PREV-01 (IFN636-149): only the right people can preview a submission,
+  and content from an uploaded file can never run scripts in the browser.
+
+  Uses the submission created by the "File preview" folder (run it first,
+  or run the whole collection).
+order: 4600

@@ -106,7 +106,9 @@ jobs:
             --env-var "teacherEmail=teacher@portal.edu.au" \
             --env-var "teacherPassword=$DEMO_PASSWORD" \
             --env-var "studentEmail=student1@portal.edu.au" \
-            --env-var "studentPassword=$DEMO_PASSWORD"
+            --env-var "studentPassword=$DEMO_PASSWORD" \
+            --env-var "student2Email=student2@portal.edu.au" \
+            --env-var "student2Password=$DEMO_PASSWORD"
 
       - name: Show the app log
         if: failure()

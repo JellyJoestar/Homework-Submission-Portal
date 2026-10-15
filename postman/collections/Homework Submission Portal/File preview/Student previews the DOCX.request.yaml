@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  FR-PREV-01: the student sees their DOCX converted to HTML (mammoth),
+  so the browser can show it without Word.
+method: GET
+url: "{{baseUrl}}/student/submissions/{{preview_submission_id}}/preview"
+order: 7000
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Returns HTML", function () {
+          pm.expect(pm.response.headers.get("Content-Type")).to.include("text/html");
+      });
+
+      pm.test("Shows the essay converted to HTML", function () {
+          pm.expect(pm.response.text()).to.include("<strong>My Assessment Essay</strong>");
+      });

@@ -1,0 +1,27 @@
+$kind: http-request
+description: |-
+  FR-PREV-01: the teacher sees the PDF inside the page (inline), with the
+  browser's own PDF viewer, instead of downloading it.
+method: GET
+url: "{{baseUrl}}/teacher/submissions/{{preview_submission_id}}/preview"
+order: 5000
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Returns the PDF", function () {
+          pm.expect(pm.response.headers.get("Content-Type")).to.include("application/pdf");
+      });
+
+      pm.test("Shown inline, not downloaded", function () {
+          pm.expect(pm.response.headers.get("Content-Disposition")).to.match(/^inline/);
+      });

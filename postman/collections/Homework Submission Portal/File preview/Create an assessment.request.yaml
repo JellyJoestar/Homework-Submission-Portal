@@ -1,0 +1,49 @@
+$kind: http-request
+description: |-
+  Setup: the teacher creates a Draft assessment with unlimited attempts
+  (max_attempts = 0), so the student can submit more than one file.
+  The title is unique on every run and saved to `preview_title`.
+method: POST
+url: "{{baseUrl}}/teacher/assessments"
+order: 1000
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{preview_title}}"
+    description: Created by the Postman collection
+    unit_id: "{{preview_unit_id}}"
+    max_attempts: "0"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.environment.set("preview_title", "Postman preview " + Date.now());
+
+      // Use the first unit in the "New assessment" form, so it works on any database
+      pm.sendRequest({
+          url: pm.variables.replaceIn("{{baseUrl}}/teacher/assessments/new"),
+          method: "GET",
+          header: { Cookie: "session=" + pm.environment.get("teacher_session") }
+      }, function (err, res) {
+          const unit = err ? null : res.text().match(/<option value="(\d+)"/);
+          if (unit) {
+              pm.environment.set("preview_unit_id", unit[1]);
+          } else {
+              console.warn("No unit found on the New assessment page!");
+          }
+      });
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (assessment created)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the teacher assessment list", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });

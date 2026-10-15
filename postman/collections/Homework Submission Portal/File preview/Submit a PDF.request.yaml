@@ -1,0 +1,35 @@
+$kind: http-request
+description: |-
+  The student submits tests/files/report.pdf.
+  Saves the submission id from the redirect to `preview_submission_id`.
+method: POST
+url: "{{baseUrl}}/student/assessments/{{preview_assessment_id}}/submit"
+order: 4000
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: submission_file
+      src: tests/files/report.pdf
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (submitted)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      const submission = (pm.response.headers.get("Location") || "").match(/\/student\/submissions\/(\d+)/);
+
+      pm.test("Redirects to the submission details", function () {
+          pm.expect(submission, "Location: /student/submissions/<id>").to.not.be.null;
+      });
+
+      if (submission) {
+          pm.environment.set("preview_submission_id", submission[1]);
+      }

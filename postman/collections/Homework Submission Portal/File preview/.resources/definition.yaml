@@ -1,0 +1,14 @@
+$kind: collection
+name: File preview
+description: |-
+  FR-PREV-01 (IFN636-94): teachers and students preview a submitted PDF or DOCX.
+
+  Creates its own data through the app, so it works on an empty database:
+  the teacher creates and publishes an assessment (unlimited attempts), the
+  student submits tests/files/report.pdf and then tests/files/essay.docx.
+  Run the Auth folder first (or the whole collection).
+
+  The file paths are relative to the root of the repository: the Postman CLI
+  must run from there, and in the Postman app the working directory
+  (Settings -> General) must be the repository root.
+order: 4500

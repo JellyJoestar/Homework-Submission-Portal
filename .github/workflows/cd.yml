@@ -1,5 +1,4 @@
-
-name: IFN636 CD - Source Deployment
+name: IFN636 CD - Two-Runner Source Deployment
 
 on:
   workflow_dispatch:
@@ -12,8 +11,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-source:
-    name: Deploy Identical Source to Both Servers
+  deploy-server-1:
+    name: Deploy Source to Server 1
     if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Linux, X64, Server-1]
     timeout-minutes: 10
@@ -24,78 +23,72 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Package exact Git commit
+      - name: Verify Runner 1
         shell: bash
         run: |
           set -euo pipefail
-
-          test "$GITHUB_REF" = "refs/heads/main"
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-
-          ARCHIVE="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
-
-          git archive --format=tar "$GITHUB_SHA" | gzip -n > "$ARCHIVE"
-
-          test -s "$ARCHIVE"
-          sha256sum "$ARCHIVE"
-
-          echo "Source package created for commit: $GITHUB_SHA"
-
-      - name: Deploy source to Server 1
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          ARCHIVE="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
-
           test "$(whoami)" = "githubrunner"
-          bash scripts/install_source_release.sh "$ARCHIVE" "$GITHUB_SHA"
+          test "$(hostname)" = "ip-172-31-75-62"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "Runner 1 identity: PASS"
+
+      - name: Package selected commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=tar "$GITHUB_SHA" |
+            gzip -n > "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
+
+      - name: Install Server 1 source release
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
+
+          bash scripts/install_source_release.sh \
+            "$archive" "$GITHUB_SHA"
 
           test "$(cat "/opt/homework-portal/releases/$GITHUB_SHA/DEPLOYED_COMMIT")" = "$GITHUB_SHA"
 
           echo "Server 1 source deployment: PASS"
 
-      - name: Deploy source to Server 2
+  deploy-server-2:
+    name: Deploy Source to Server 2
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Linux, X64, Server-2]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify Runner 2
         shell: bash
         run: |
           set -euo pipefail
+          test "$(whoami)" = "githubrunner2"
+          test "$(hostname)" = "ip-172-31-78-128"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "Runner 2 identity: PASS"
 
-          ARCHIVE="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
-          REMOTE_ARCHIVE="/opt/homework-portal/releases/.package-$GITHUB_SHA.tar.gz"
-          REMOTE="ifn636deploy@172.31.78.128"
+      - name: Package selected commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=tar "$GITHUB_SHA" |
+            gzip -n > "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
 
-          SSH_ARGS=(
-            -i "$HOME/.ssh/ifn636_server2_deploy"
-            -o IdentitiesOnly=yes
-            -o BatchMode=yes
-            -o StrictHostKeyChecking=yes
-            -o ConnectTimeout=5
-          )
+      - name: Install Server 2 source release
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
 
-          scp "${SSH_ARGS[@]}" \
-            "$ARCHIVE" "$REMOTE:$REMOTE_ARCHIVE"
+          bash scripts/install_source_release.sh \
+            "$archive" "$GITHUB_SHA"
 
-          LOCAL_DIGEST="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
-          REMOTE_DIGEST="$(
-            ssh -T "${SSH_ARGS[@]}" "$REMOTE" \
-              "sha256sum '$REMOTE_ARCHIVE'" | awk '{print $1}'
-          )"
-
-          test "$LOCAL_DIGEST" = "$REMOTE_DIGEST"
-
-          ssh -T "${SSH_ARGS[@]}" "$REMOTE" \
-            "bash -s -- '$REMOTE_ARCHIVE' '$GITHUB_SHA'" \
-            < scripts/install_source_release.sh
-
-          REMOTE_SHA="$(
-            ssh -T "${SSH_ARGS[@]}" "$REMOTE" \
-              "cat '/opt/homework-portal/releases/$GITHUB_SHA/DEPLOYED_COMMIT'"
-          )"
-
-          test "$REMOTE_SHA" = "$GITHUB_SHA"
-
-          ssh -T "${SSH_ARGS[@]}" "$REMOTE" \
-            "rm -f '$REMOTE_ARCHIVE'"
+          test "$(cat "/opt/homework-portal/releases/$GITHUB_SHA/DEPLOYED_COMMIT")" = "$GITHUB_SHA"
 
           echo "Server 2 source deployment: PASS"
-          echo "Both servers deployed commit: $GITHUB_SHA"

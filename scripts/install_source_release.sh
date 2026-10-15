@@ -16,8 +16,23 @@ fi
 
 test -f "$archive"
 test -d "$releases"
-test -d "$root/shared/uploads"
 test -w "$releases"
+
+# Validate the shared NFS upload filesystem.
+nfs_path="$root/uploads"
+expected_source="172.31.71.124:/srv/homework-portal/uploads"
+
+actual_source="$(findmnt -rn -M "$nfs_path" -o SOURCE || true)"
+actual_type="$(findmnt -rn -M "$nfs_path" -o FSTYPE || true)"
+
+if [[ "$actual_source" != "$expected_source" ||
+      "$actual_type" != "nfs4" ]]; then
+  echo "ERROR: Expected NFS upload storage is not mounted" >&2
+  exit 1
+fi
+
+test -d "$nfs_path/resources"
+test -d "$nfs_path/submissions"
 
 digest="$(sha256sum "$archive" | awk '{print $1}')"
 
@@ -50,8 +65,8 @@ printf '%s\n' "$sha" > "$stage/DEPLOYED_COMMIT"
 printf '%s\n' "$digest" > "$stage/SOURCE_ARCHIVE_SHA256"
 
 # Persistent data is separate from versioned application code.
-ln -s ../../shared/uploads "$stage/uploads"
-ln -s ../../shared/.env "$stage/.env"
+ln -s ../../uploads "$stage/uploads"
+ln -s /etc/homework-portal/.env "$stage/.env"
 
 chmod 750 "$stage"
 mv -- "$stage" "$release"

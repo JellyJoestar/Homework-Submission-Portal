@@ -1,0 +1,31 @@
+$kind: http-request
+description: |-
+  The student submits to the assessment from Teacher / Create assessment late
+  submission (due date passed, late submissions not allowed) -> 403.
+url: "{{baseUrl}}/student/assessments/{{late_assessment_id}}/submit"
+method: POST
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: submission_file
+      src: []
+      description: ""
+      disabled: false
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 403 Forbidden", function () {
+          pm.response.to.have.status(403);
+      });
+
+      pm.test("Response contains blocked message", function () {
+          pm.expect(pm.response.text()).to.include("The due date has passed. Late submissions are not allowed.");
+      });
+    language: text/javascript
+order: 3000

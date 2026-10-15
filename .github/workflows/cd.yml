@@ -1,38 +1,94 @@
-
-name: IFN636 CD - Deployment Verification
+name: IFN636 CD - Two-Runner Source Deployment
 
 on:
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
+
+concurrency:
+  group: ifn636-cd-main
+  cancel-in-progress: false
 
 jobs:
-  deployment-path-check:
-    name: Verify CD Deployment Path
+  deploy-server-1:
+    name: Deploy Source to Server 1
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Linux, X64, Server-1]
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
-      - name: Verify release information
-        run: |
-          echo "Branch: $GITHUB_REF_NAME"
-          echo "Commit: $GITHUB_SHA"
-          test "$GITHUB_REF_NAME" = "main"
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Verify Server 1 deployment access
+      - name: Verify Runner 1
+        shell: bash
         run: |
+          set -euo pipefail
           test "$(whoami)" = "githubrunner"
           test "$(hostname)" = "ip-172-31-75-62"
-          test -w /opt/homework-portal
-          echo "Server 1 deployment path: PASS"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "Runner 1 identity: PASS"
 
-      - name: Verify Server 2 deployment access
+      - name: Package selected commit
+        shell: bash
         run: |
-          ssh -T \
-            -i "$HOME/.ssh/ifn636_server2_deploy" \
-            -o IdentitiesOnly=yes \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o ConnectTimeout=5 \
-            ifn636deploy@172.31.78.128 \
-            'test "$(whoami)" = "ifn636deploy" && test -w /opt/homework-portal && echo "Server 2 deployment path: PASS"'
+          set -euo pipefail
+          git archive --format=tar "$GITHUB_SHA" |
+            gzip -n > "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
+
+      - name: Install Server 1 source release
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
+
+          bash scripts/install_source_release.sh \
+            "$archive" "$GITHUB_SHA"
+
+          test "$(cat "/opt/homework-portal/releases/$GITHUB_SHA/DEPLOYED_COMMIT")" = "$GITHUB_SHA"
+
+          echo "Server 1 source deployment: PASS"
+
+  deploy-server-2:
+    name: Deploy Source to Server 2
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Linux, X64, Server-2]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify Runner 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(whoami)" = "githubrunner2"
+          test "$(hostname)" = "ip-172-31-78-128"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "Runner 2 identity: PASS"
+
+      - name: Package selected commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=tar "$GITHUB_SHA" |
+            gzip -n > "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
+
+      - name: Install Server 2 source release
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
+
+          bash scripts/install_source_release.sh \
+            "$archive" "$GITHUB_SHA"
+
+          test "$(cat "/opt/homework-portal/releases/$GITHUB_SHA/DEPLOYED_COMMIT")" = "$GITHUB_SHA"
+
+          echo "Server 2 source deployment: PASS"

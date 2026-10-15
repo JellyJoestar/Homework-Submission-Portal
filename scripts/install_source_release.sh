@@ -17,6 +17,7 @@ fi
 test -f "$archive"
 test -d "$releases"
 test -w "$releases"
+test -f "$root/shared/.env"
 
 # Validate the shared NFS upload filesystem.
 nfs_path="$root/uploads"

@@ -1,0 +1,27 @@
+$kind: http-request
+description: Changes the dynamically discovered Draft assessment from maximum 3 to 5.
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}/edit"
+order: 5700
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{ifn636_limit_title_three}}"
+    unit_id: "{{ifn636_limit_unit_id}}"
+    max_attempts: "5"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 when editing a Draft", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Draft edit redirects to the Teacher assessment list", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });

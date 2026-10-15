@@ -1,0 +1,32 @@
+$kind: http-request
+description: Reads the created assessment detail page to prove an omitted maximum defaults to one.
+method: GET
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_default}}"
+order: 5600
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const title = pm.environment.get("ifn636_limit_title_default");
+
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Detail page identifies the default-maximum assessment", function () {
+          pm.expect(html).to.include("<strong>Title:</strong> " + title);
+      });
+
+      pm.test("Omitted maximum attempts defaults to 1", function () {
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 1 </div>");
+      });
+
+      pm.test("Default-maximum assessment is Draft", function () {
+          pm.expect(html).to.include("<strong>Status:</strong> Draft");
+      });

@@ -1,0 +1,32 @@
+$kind: http-request
+description: Reads the Draft detail page to prove the edited maximum 5 was persisted.
+method: GET
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}"
+order: 5800
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const title = pm.environment.get("ifn636_limit_title_three");
+
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Detail page still identifies the edited assessment", function () {
+          pm.expect(html).to.include("<strong>Title:</strong> " + title);
+      });
+
+      pm.test("Edited maximum attempts 5 is persisted", function () {
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 5 </div>");
+      });
+
+      pm.test("Edited assessment remains Draft", function () {
+          pm.expect(html).to.include("<strong>Status:</strong> Draft");
+      });

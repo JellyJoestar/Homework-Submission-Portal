@@ -1,0 +1,27 @@
+$kind: http-request
+description: Creates the Draft assessment used for edit and publish tests.
+method: POST
+url: "{{baseUrl}}/teacher/assessments"
+order: 5000
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{ifn636_limit_title_three}}"
+    unit_id: "{{ifn636_limit_unit_id}}"
+    max_attempts: "3"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 for valid maximum 3", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the Teacher assessment list", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });

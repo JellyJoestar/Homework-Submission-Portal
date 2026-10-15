@@ -1,0 +1,22 @@
+$kind: http-request
+description: Publishes the dynamically discovered assessment after its maximum is updated to 5.
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}/publish"
+order: 5900
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 when publishing the Draft", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Publish redirects to the same assessment detail page", function () {
+          const id = pm.environment.get("ifn636_limit_id_three");
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments/" + id);
+      });

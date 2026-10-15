@@ -1,0 +1,41 @@
+$kind: http-request
+description: |-
+  Reads the create form to discover the actual IFN636 unit ID, then creates
+  unique titles for this collection run and clears any IDs from an earlier run.
+method: GET
+url: "{{baseUrl}}/teacher/assessments/new"
+order: 4500
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      const html = pm.response.text();
+      const unitPattern = /<option\s+value="(\d+)"[^>]*>\s*IFN636\s*-\s*Software Life Cycle Management\s*<\/option>/g;
+      const unitMatches = Array.from(html.matchAll(unitPattern));
+
+      pm.test("Create form contains exactly one IFN636 unit", function () {
+          pm.expect(unitMatches).to.have.lengthOf(1);
+      });
+
+      if (unitMatches.length === 1) {
+          pm.environment.set("ifn636_limit_unit_id", unitMatches[0][1]);
+      } else {
+          pm.environment.unset("ifn636_limit_unit_id");
+      }
+
+      const runId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+      pm.environment.set("ifn636_limit_title_three", "IFN636 LIMIT MAX 3 " + runId);
+      pm.environment.set("ifn636_limit_title_unlimited", "IFN636 LIMIT UNLIMITED " + runId);
+      pm.environment.set("ifn636_limit_title_default", "IFN636 LIMIT DEFAULT " + runId);
+      pm.environment.unset("ifn636_limit_id_three");
+      pm.environment.unset("ifn636_limit_id_unlimited");
+      pm.environment.unset("ifn636_limit_id_default");

@@ -10,6 +10,10 @@ values:
     value: ''
   - key: studentPassword
     value: ''
+  - key: student2Email
+    value: ''
+  - key: student2Password
+    value: ''
   - key: csrf_token
     value: ''
   - key: session_cookie
@@ -19,4 +23,34 @@ values:
   - key: student_session
     value: ''
   - key: logged_out_session
+    value: ''
+  - key: student2_session
+    value: ''
+  - key: preview_title
+    value: ''
+  - key: preview_unit_id
+    value: ''
+  - key: preview_assessment_id
+    value: ''
+  - key: preview_submission_id
+    value: ''
+  - key: ifn636_limit_unit_id
+    value: ''
+  - key: ifn636_limit_title_three
+    value: ''
+  - key: ifn636_limit_title_unlimited
+    value: ''
+  - key: ifn636_limit_title_default
+    value: ''
+  - key: ifn636_limit_id_three
+    value: ''
+  - key: ifn636_limit_id_unlimited
+    value: ''
+  - key: ifn636_limit_id_default
+    value: ''
+  - key: late_title
+    value: ''
+  - key: late_unit_id
+    value: ''
+  - key: late_assessment_id
     value: ''

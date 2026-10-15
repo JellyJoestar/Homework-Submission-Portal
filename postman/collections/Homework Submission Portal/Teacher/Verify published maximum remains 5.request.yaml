@@ -26,7 +26,7 @@ scripts:
       });
 
       pm.test("Rejected published edit leaves maximum attempts at 5", function () {
-          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 5");
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 5 </div>");
       });
 
       pm.test("Assessment remains Published", function () {

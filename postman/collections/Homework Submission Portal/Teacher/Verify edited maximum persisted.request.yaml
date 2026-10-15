@@ -24,7 +24,7 @@ scripts:
       });
 
       pm.test("Edited maximum attempts 5 is persisted", function () {
-          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 5");
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 5 </div>");
       });
 
       pm.test("Edited assessment remains Draft", function () {

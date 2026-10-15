@@ -24,7 +24,7 @@ scripts:
       });
 
       pm.test("Maximum attempts 3 is persisted", function () {
-          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 3");
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 3 </div>");
       });
 
       pm.test("Created assessment is Draft", function () {

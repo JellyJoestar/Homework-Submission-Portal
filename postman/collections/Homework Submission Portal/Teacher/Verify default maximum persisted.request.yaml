@@ -24,7 +24,7 @@ scripts:
       });
 
       pm.test("Omitted maximum attempts defaults to 1", function () {
-          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 1");
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> 1 </div>");
       });
 
       pm.test("Default-maximum assessment is Draft", function () {

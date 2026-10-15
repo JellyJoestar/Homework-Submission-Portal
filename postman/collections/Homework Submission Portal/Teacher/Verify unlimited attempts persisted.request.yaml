@@ -24,7 +24,7 @@ scripts:
       });
 
       pm.test("Zero maximum attempts is shown as Unlimited", function () {
-          pm.expect(html).to.include("<strong>Maximum attempts:</strong> Unlimited");
+          pm.expect(html).to.include("<strong>Maximum attempts:</strong> Unlimited </div>");
       });
 
       pm.test("Unlimited assessment is Draft", function () {

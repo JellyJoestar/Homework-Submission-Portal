@@ -1,0 +1,60 @@
+$kind: http-request
+description: |-
+  Logs in as a second student and saves the session to `student2_session`,
+  to check that students can only preview their own submissions.
+
+  Self-contained: before sending, it opens the login page to get a fresh
+  CSRF token and session.
+method: POST
+url: "{{baseUrl}}/login"
+order: 2000
+headers:
+  Cookie: session={{session_cookie}}
+body:
+  type: urlencoded
+  content:
+    email: "{{student2Email}}"
+    password: "{{student2Password}}"
+    csrf_token: "{{csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      // Open the login form first: the POST needs its CSRF token and session
+      pm.sendRequest(pm.variables.replaceIn("{{baseUrl}}/login"), function (err, res) {
+          if (err) {
+              console.warn("Could not open the login page:", err);
+              return;
+          }
+          const token = res.text().match(/name="csrf_token" type="hidden" value="([^"]+)"/);
+          const session = (res.headers.get("Set-Cookie") || "").match(/session=([^;]+)/);
+          if (token && session) {
+              pm.environment.set("csrf_token", token[1]);
+              pm.environment.set("session_cookie", session[1]);
+          } else {
+              console.warn("No CSRF token or session cookie found on the login page!");
+          }
+      });
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (logged in)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the student home page", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/student");
+      });
+
+      // Save the logged-in session cookie to an environment variable
+      const session = (pm.response.headers.get("Set-Cookie") || "").match(/session=([^;]+)/);
+
+      if (session) {
+          pm.environment.set("student2_session", session[1]);
+          console.log("Logged-in student 2 session saved to environment");
+      } else {
+          console.warn("No session cookie found in response!");
+      }

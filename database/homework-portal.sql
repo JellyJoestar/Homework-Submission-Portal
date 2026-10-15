@@ -94,7 +94,3 @@ VALUES
     ('teacher@portal.edu.au', 'scrypt:32768:8:1$KfzOQEfjw0y0Dr0R$65cc2e0f9d1e27eba6ea80be4e7250318ba171c5e1c983d106d65f09beeaabcd8f41cb1065fecc920cc4d9c05bf9979c108edad4a5b748f8e1176d9d9ceb0e70', 'Teacher', 'Tess', 'Teacher'),
     ('student1@portal.edu.au', 'scrypt:32768:8:1$KfzOQEfjw0y0Dr0R$65cc2e0f9d1e27eba6ea80be4e7250318ba171c5e1c983d106d65f09beeaabcd8f41cb1065fecc920cc4d9c05bf9979c108edad4a5b748f8e1176d9d9ceb0e70', 'Student', 'Sam', 'Student'),
     ('student2@portal.edu.au', 'scrypt:32768:8:1$KfzOQEfjw0y0Dr0R$65cc2e0f9d1e27eba6ea80be4e7250318ba171c5e1c983d106d65f09beeaabcd8f41cb1065fecc920cc4d9c05bf9979c108edad4a5b748f8e1176d9d9ceb0e70', 'Student', 'Alex', 'Student');
-
--- Demo late submission data for Postman CI test
-INSERT INTO assessments (assessment_id, title, description, criteria, due_date, unit_id, allow_late, status)
-VALUES (3, 'Testing Late Assessment', 'Testing late submission rejection', 'criteria', '2026-01-01 12:00:00', 1, FALSE, 'Published');

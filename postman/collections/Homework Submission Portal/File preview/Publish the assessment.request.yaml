@@ -1,0 +1,17 @@
+$kind: http-request
+description: "Setup: the teacher publishes the assessment, so the student can submit to it."
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{preview_assessment_id}}/publish"
+order: 3000
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (published)", function () {
+          pm.response.to.have.status(302);
+      });

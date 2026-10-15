@@ -431,6 +431,7 @@ def get_submissions_by_student(student_id):
             s.mark,
             s.feedback,
             s.submitted_at,
+            s.is_late,
             a.title AS assessment_title,
             u.unit_code,
             u.unit_name
@@ -466,6 +467,7 @@ def get_submission_by_id(submission_id, student_id):
             s.mark,
             s.feedback,
             s.submitted_at,
+            s.is_late,
             a.title AS assessment_title,
             u.unit_code,
             u.unit_name
@@ -499,6 +501,7 @@ def get_submissions_by_assessment(assessment_id):
             s.attempt_count,
             s.status,
             s.submitted_at,
+            s.is_late,
             CONCAT(st.first_name, ' ', st.last_name) AS student_name,
             a.title AS assessment_title,
             u.unit_code,
@@ -536,6 +539,7 @@ def get_submission_for_teacher(submission_id):
             s.mark,
             s.feedback,
             s.submitted_at,
+            s.is_late,
             CONCAT(st.first_name, ' ', st.last_name) AS student_name,
             a.title AS assessment_title,
             a.status AS assessment_status,

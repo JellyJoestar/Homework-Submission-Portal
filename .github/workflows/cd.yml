@@ -119,7 +119,7 @@ jobs:
   deploy-server-2:
     name: Deploy Source to Server 2
     if: github.ref == 'refs/heads/main'
-    needs: test
+    needs: deploy-server-1
     runs-on: [self-hosted, Linux, X64, Server-2]
     environment: production
     timeout-minutes: 10

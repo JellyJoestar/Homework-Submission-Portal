@@ -82,5 +82,6 @@ find "$stage" -xdev -type f \
 
 chmod 750 "$stage"
 mv -- "$stage" "$release"
+trap - EXIT
 
 echo "Source release installed: $sha"

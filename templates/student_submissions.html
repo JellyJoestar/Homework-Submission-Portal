@@ -25,6 +25,9 @@
 
                     Status:
                     {{ submission.status }}
+                    {% if submission.is_late %}
+                        <span class="status-late" style="background-color:#f74848; color:white; padding: 4px 8px; border-radius: 10px; margin-left: 10px;">Submitted Late</span>
+                    {% endif %}
 
                     <br>
 

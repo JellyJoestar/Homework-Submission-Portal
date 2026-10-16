@@ -158,6 +158,7 @@ def student_assessment_details(assessment_id):
         can_submit=can_submit,
     )
 
+
 @views.route("/student/assessments/<int:assessment_id>/submit",methods=["POST"])
 @student_required
 def student_submit_assessment(assessment_id):
@@ -192,10 +193,10 @@ def student_submit_assessment(assessment_id):
     except Exception:
         remove_submission_file(stored_filename)
         raise
-
+    is_late = bool(due_date and now > due_date)
     try:
         result = save_submission_attempt(
-            assessment_id, student_id, original_filename, stored_filename
+            assessment_id, student_id, original_filename, stored_filename, is_late=is_late
         )
     except AttemptLimitReachedError:
         remove_submission_file(stored_filename)

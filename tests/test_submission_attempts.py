@@ -25,7 +25,7 @@ def upload(filename="answer.pdf", content=b"valid submission"):
 
 def install_submission_double(monkeypatch, state, max_attempts):
     def save_submission_attempt(
-        assessment_id, student_id, original_filename, stored_filename
+        assessment_id, student_id, original_filename, stored_filename, is_late=False
     ):
         assert assessment_id == ASSESSMENT_ID
         assert student_id == STUDENT_ID
@@ -261,7 +261,7 @@ def test_invalid_uploads_do_not_call_database_or_create_files(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: pytest.fail("invalid uploads must not consume attempts"),
+        lambda *args, **kwargs: pytest.fail("invalid uploads must not consume attempts"),
     )
 
     response = student_client.post(
@@ -284,7 +284,7 @@ def test_database_failure_discards_new_file_without_replacing_current_file(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: (_ for _ in ()).throw(RuntimeError("database unavailable")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("database unavailable")),
     )
 
     with pytest.raises(RuntimeError, match="database unavailable"):
@@ -307,7 +307,7 @@ def test_unknown_commit_outcome_keeps_new_file_to_protect_possible_reference(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: (_ for _ in ()).throw(
+        lambda *args, **kwargs: (_ for _ in ()).throw(
             db.SubmissionCommitOutcomeUnknownError("connection lost during commit")
         ),
     )
@@ -354,7 +354,7 @@ def test_non_published_assessment_remains_forbidden(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: pytest.fail("closed assessments must not accept submissions"),
+        lambda *args, **kwargs: pytest.fail("closed assessments must not accept submissions"),
     )
 
     response = student_client.post(

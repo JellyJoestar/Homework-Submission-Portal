@@ -69,6 +69,7 @@ CREATE TABLE submissions (
     status VARCHAR(20) NOT NULL DEFAULT 'Submitted',
     mark DECIMAL(5,2) NULL,
     feedback TEXT NULL,
+    is_late BOOLEAN NOT NULL DEFAULT FALSE,
     submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_submissions_attempt_count_positive

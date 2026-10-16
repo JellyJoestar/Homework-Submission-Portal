@@ -305,7 +305,7 @@ def delete_assessment_resource(resource_id, assessment_id):
     connection.close()
 
 def save_submission_attempt(
-    assessment_id, student_id, original_filename, stored_filename
+    assessment_id, student_id, original_filename, stored_filename, is_late=False
 ):
     """Atomically create or replace the student's current submission.
 
@@ -363,10 +363,11 @@ def save_submission_attempt(
                     stored_filename = %s,
                     attempt_count = attempt_count + 1,
                     status = 'Submitted',
-                    submitted_at = CURRENT_TIMESTAMP
+                    submitted_at = CURRENT_TIMESTAMP,
+                    is_late = %s
                 WHERE submission_id = %s
                 """,
-                (original_filename, stored_filename, submission["submission_id"])
+                (original_filename, stored_filename, is_late, submission["submission_id"])
             )
             submission_id = submission["submission_id"]
             replaced_stored_filename = submission["stored_filename"]
@@ -379,11 +380,12 @@ def save_submission_attempt(
                     student_id,
                     original_filename,
                     stored_filename,
-                    attempt_count
+                    attempt_count,
+                    is_late
                 )
-                VALUES (%s, %s, %s, %s, 1)
+                VALUES (%s, %s, %s, %s, 1, %s)
                 """,
-                (assessment_id, student_id, original_filename, stored_filename)
+                (assessment_id, student_id, original_filename, stored_filename, is_late)
             )
             submission_id = cursor.lastrowid
             replaced_stored_filename = None
@@ -431,6 +433,7 @@ def get_submissions_by_student(student_id):
             s.mark,
             s.feedback,
             s.submitted_at,
+            s.is_late,
             a.title AS assessment_title,
             u.unit_code,
             u.unit_name
@@ -466,6 +469,7 @@ def get_submission_by_id(submission_id, student_id):
             s.mark,
             s.feedback,
             s.submitted_at,
+            s.is_late,
             a.title AS assessment_title,
             u.unit_code,
             u.unit_name
@@ -499,6 +503,7 @@ def get_submissions_by_assessment(assessment_id):
             s.attempt_count,
             s.status,
             s.submitted_at,
+            s.is_late,
             CONCAT(st.first_name, ' ', st.last_name) AS student_name,
             a.title AS assessment_title,
             u.unit_code,
@@ -536,6 +541,7 @@ def get_submission_for_teacher(submission_id):
             s.mark,
             s.feedback,
             s.submitted_at,
+            s.is_late,
             CONCAT(st.first_name, ' ', st.last_name) AS student_name,
             a.title AS assessment_title,
             a.status AS assessment_status,

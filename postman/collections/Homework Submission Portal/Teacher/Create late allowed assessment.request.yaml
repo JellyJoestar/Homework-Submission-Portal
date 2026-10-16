@@ -1,0 +1,53 @@
+$kind: http-request
+description: |-
+  Setup for Student / Late submission acception and flagged: the teacher
+  creates an assessment whose due date has already passed and that ALLOWS late
+  submissions (unlimited attempts). The title is unique on every run and saved
+  to `late_allowed_title`.
+method: POST
+url: "{{baseUrl}}/teacher/assessments"
+order: 7300
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{late_allowed_title}}"
+    description: Testing late submission acceptance
+    criteria: Criteria
+    due_date: 2026-01-01T12:00
+    unit_id: "{{late_unit_id}}"
+    allow_late: "on"
+    max_attempts: "0"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.environment.set("late_allowed_title", "Postman late allowed " + Date.now());
+
+      // Use the first unit in the "New assessment" form, so it works on any database
+      pm.sendRequest({
+          url: pm.variables.replaceIn("{{baseUrl}}/teacher/assessments/new"),
+          method: "GET",
+          header: { Cookie: "session=" + pm.environment.get("teacher_session") }
+      }, function (err, res) {
+          const unit = err ? null : res.text().match(/<option value="(\d+)"/);
+          if (unit) {
+              pm.environment.set("late_unit_id", unit[1]);
+          } else {
+              console.warn("No unit found on the New assessment page!");
+          }
+      });
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (assessment created)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the teacher assessment list", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });

@@ -25,6 +25,7 @@ jobs:
     name: Deploy Source to Server 1
     if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Linux, X64, Server-1]
+    environment: production
     timeout-minutes: 10
 
     steps:
@@ -89,6 +90,7 @@ jobs:
     name: Deploy Source to Server 2
     if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Linux, X64, Server-2]
+    environment: production
     timeout-minutes: 10
 
     steps:

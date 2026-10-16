@@ -1,0 +1,28 @@
+$kind: http-request
+description: Proves the rejected graded resubmission changed neither count, filename nor ID.
+method: GET
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_graded}}"
+order: 4500
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_graded");
+
+      pm.test("Rejected graded resubmission leaves attempt count unchanged", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Attempts:</strong> 1 of 3");
+          pm.expect(html).to.include("<strong>Remaining attempts:</strong> 2");
+      });
+
+      pm.test("Accepted graded file and submission ID remain current", function () {
+          pm.expect(html).to.include("<strong>Latest filename:</strong> ifn636-graded-attempt-1.pdf");
+          pm.expect(html).to.not.include("ifn636-graded-attempt-2-rejected.pdf");
+          pm.expect(html).to.include('href="/student/submissions/' + submissionId + '"');
+      });

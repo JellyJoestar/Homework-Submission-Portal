@@ -624,6 +624,13 @@ The app uses a session cookie with a CSRF-protected login form. Run the `Auth` f
 
 Requests that log out go in the `Logout` folder, which runs last: logging out in the middle of a run would leave the requests after it without a session. Requests without a session (for example, checking that a page redirects to the login form) go in the `Anonymous` folder.
 
+The `File preview` folders create their own data through the app (an assessment, then submissions of the sample files in `tests/files/`), so the collection also runs on an empty database. File paths in requests are relative to the repository root:
+
+- **Postman app:** Settings → General → **Working directory** = the root of this repository.
+- **Postman CLI:** run it from the repository root.
+
+`File preview security` also logs in as a second student: set `student2Email` and `student2Password` in the environment (current value only).
+
 On macOS, use `http://127.0.0.1:5000`, not `localhost:5000`: AirPlay Receiver also listens on port 5000 and can answer `localhost` requests instead of Flask.
 
 ---

@@ -1,0 +1,24 @@
+$kind: http-request
+description: Creates the independent Draft assessment with unlimited submissions.
+method: POST
+url: "{{baseUrl}}/teacher/assessments"
+order: 1200
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: "{{ifn636_107_title_unlimited}}"
+    unit_id: "{{ifn636_107_unit_id}}"
+    max_attempts: "0"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Unlimited assessment is created", function () {
+          pm.response.to.have.status(302);
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments");
+      });

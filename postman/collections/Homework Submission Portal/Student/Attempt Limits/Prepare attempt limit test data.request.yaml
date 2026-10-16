@@ -1,0 +1,49 @@
+$kind: http-request
+description: |-
+  Discovers the IFN636 unit ID, creates unique titles for this run and clears
+  transient assessment and submission IDs left by an earlier run.
+method: GET
+url: "{{baseUrl}}/teacher/assessments/new"
+order: 1000
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Teacher create form is available", function () {
+          pm.response.to.have.status(200);
+      });
+
+      const html = pm.response.text();
+      const unitPattern = /<option\s+value="(\d+)"[^>]*>\s*IFN636\s*-\s*Software Life Cycle Management\s*<\/option>/g;
+      const unitMatches = Array.from(html.matchAll(unitPattern));
+
+      pm.test("Create form contains exactly one IFN636 unit", function () {
+          pm.expect(unitMatches).to.have.lengthOf(1);
+      });
+
+      if (unitMatches.length === 1) {
+          pm.environment.set("ifn636_107_unit_id", unitMatches[0][1]);
+      } else {
+          pm.environment.unset("ifn636_107_unit_id");
+      }
+
+      const runId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+      pm.environment.set("ifn636_107_title_limited", "IFN636-107 LIMIT 3 " + runId);
+      pm.environment.set("ifn636_107_title_unlimited", "IFN636-107 UNLIMITED " + runId);
+      pm.environment.set("ifn636_107_title_graded", "IFN636-107 GRADED " + runId);
+
+      [
+          "ifn636_107_assessment_id_limited",
+          "ifn636_107_assessment_id_unlimited",
+          "ifn636_107_assessment_id_graded",
+          "ifn636_107_submission_id_limited",
+          "ifn636_107_submission_id_unlimited",
+          "ifn636_107_submission_id_graded"
+      ].forEach(function (key) {
+          pm.environment.unset(key);
+      });

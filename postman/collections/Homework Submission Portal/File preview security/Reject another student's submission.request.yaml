@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  A student can't preview a submission that belongs to another student:
+  the app answers 404 (it doesn't even say the submission exists).
+method: GET
+url: "{{baseUrl}}/student/submissions/{{preview_submission_id}}/preview"
+order: 3000
+headers:
+  Cookie: session={{student2_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 404 (not your submission)", function () {
+          pm.response.to.have.status(404);
+      });
+
+      // The app's own 404, not Flask's "page not found" (e.g. an empty preview_submission_id)
+      pm.test("The app says the submission was not found", function () {
+          pm.expect(pm.response.text().trim()).to.equal("Submission not found.");
+      });
+
+      pm.test("Returns no file content", function () {
+          pm.expect(pm.response.text()).to.not.include("My Assessment Essay");
+      });

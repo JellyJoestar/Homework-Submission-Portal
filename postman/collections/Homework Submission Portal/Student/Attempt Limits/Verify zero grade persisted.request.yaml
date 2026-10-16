@@ -1,0 +1,29 @@
+$kind: http-request
+description: Reads the Teacher submission page to verify mark zero, feedback and identity.
+method: GET
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}"
+order: 4300
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const title = pm.environment.get("ifn636_107_title_graded");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_graded");
+
+      pm.test("Teacher submission details identify the graded record", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Submission ID:</strong> " + submissionId);
+          pm.expect(html).to.include("<strong>Assessment:</strong> " + title);
+          pm.expect(html).to.include("<strong>Submitted File:</strong> ifn636-graded-attempt-1.pdf");
+      });
+
+      pm.test("Zero grade and feedback are persisted", function () {
+          pm.expect(html).to.include('value="0.00"');
+          pm.expect(html).to.include(">IFN636-107 zero-grade feedback</textarea>");
+      });

@@ -1,0 +1,55 @@
+$kind: http-request
+description: Second valid PDF submission; it must update the existing current submission.
+method: POST
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_limited}}/submit"
+order: 2200
+headers:
+  Cookie: session={{student_session}}
+  Content-Type: multipart/form-data; boundary=IFN636LimitAttempt2
+body:
+  type: text
+  content: |-
+    --IFN636LimitAttempt2
+    Content-Disposition: form-data; name="submission_file"; filename="ifn636-limit-attempt-2.pdf"
+    Content-Type: application/pdf
+
+    %PDF-1.4
+    1 0 obj
+    << /Type /Catalog /Pages 2 0 R >>
+    endobj
+    2 0 obj
+    << /Type /Pages /Kids [3 0 R] /Count 1 >>
+    endobj
+    3 0 obj
+    << /Type /Page /Parent 2 0 R /MediaBox [0 0 72 72] >>
+    endobj
+    xref
+    0 4
+    0000000000 65535 f
+    0000000009 00000 n
+    0000000058 00000 n
+    0000000115 00000 n
+    trailer
+    << /Size 4 /Root 1 0 R >>
+    startxref
+    184
+    %%EOF
+    --IFN636LimitAttempt2--
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const location = pm.response.headers.get("Location") || "";
+      const submissionId = pm.environment.get("ifn636_107_submission_id_limited");
+
+      pm.test("Second limited submission redirects successfully", function () {
+          pm.response.to.have.status(302);
+          pm.expect(location).to.match(new RegExp("/student/submissions/" + submissionId + "$"));
+      });
+
+      pm.test("Second submission reuses the current submission ID", function () {
+          pm.expect(location.split("/").pop()).to.equal(submissionId);
+      });

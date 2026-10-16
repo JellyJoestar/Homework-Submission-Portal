@@ -1,0 +1,32 @@
+$kind: http-request
+description: Verifies the limit is reached at three and the latest file remains linked.
+method: GET
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_limited}}"
+order: 2500
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_limited");
+
+      pm.test("Third attempt exhausts the finite quota", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Attempts:</strong> 3 of 3");
+          pm.expect(html).to.include("<strong>Remaining attempts:</strong> 0");
+      });
+
+      pm.test("Limit warning is displayed", function () {
+          pm.expect(html).to.include('id="submission-limit-message"');
+          pm.expect(html).to.include("Maximum submission limit reached");
+      });
+
+      pm.test("Latest Submission is the third accepted file", function () {
+          pm.expect(html).to.include("<strong>Latest filename:</strong> ifn636-limit-attempt-3.pdf");
+          pm.expect(html).to.include('href="/student/submissions/' + submissionId + '"');
+      });

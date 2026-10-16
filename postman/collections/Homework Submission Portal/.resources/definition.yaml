@@ -22,6 +22,16 @@ description: |-
   - Logout folder (runs last): logs the student out, then the session the
     browser keeps can't open student pages anymore
 
+  Feature requests create the data they need through the app (unique titles
+  on every run), so the collection runs on an empty database like the CI one:
+  - Teacher / maximum attempts requests (FR-LIMIT-01)
+  - Teacher / Create, Find and Publish late assessment, then
+    Student / Late submission rejection -> 403
+
+  File preview (FR-PREV-01) and File preview security (NFR-PREV-01):
+  create an assessment, submit the sample files in tests/files/ and check the
+  previews. File paths are relative to the repository root.
+
   Every request has "Disable cookie jar" on, so only the header is used
   (the Postman CLI ignores the cookie jar for this collection format anyway).
 

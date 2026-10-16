@@ -1,0 +1,19 @@
+$kind: http-request
+description: Publishes the dynamically discovered unlimited assessment.
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_107_assessment_id_unlimited}}/publish"
+order: 1600
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Unlimited assessment is published", function () {
+          const id = pm.environment.get("ifn636_107_assessment_id_unlimited");
+          pm.response.to.have.status(302);
+          pm.expect(pm.response.headers.get("Location")).to.include("/teacher/assessments/" + id);
+      });

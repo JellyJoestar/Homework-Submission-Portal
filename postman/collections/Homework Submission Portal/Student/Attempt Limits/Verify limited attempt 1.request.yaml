@@ -1,0 +1,33 @@
+$kind: http-request
+description: Verifies first-attempt persistence and the Latest Submission link.
+method: GET
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_limited}}"
+order: 2100
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const title = pm.environment.get("ifn636_107_title_limited");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_limited");
+
+      pm.test("Limited assessment details are available", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Title:</strong> " + title);
+      });
+
+      pm.test("First attempt and remaining quota are persisted", function () {
+          pm.expect(html).to.include("<strong>Attempts:</strong> 1 of 3");
+          pm.expect(html).to.include("<strong>Remaining attempts:</strong> 2");
+      });
+
+      pm.test("Latest Submission points to the first accepted file", function () {
+          pm.expect(html).to.include("<strong>Latest filename:</strong> ifn636-limit-attempt-1.pdf");
+          pm.expect(html).to.include('href="/student/submissions/' + submissionId + '"');
+          pm.expect(html).to.include("View Submission");
+      });

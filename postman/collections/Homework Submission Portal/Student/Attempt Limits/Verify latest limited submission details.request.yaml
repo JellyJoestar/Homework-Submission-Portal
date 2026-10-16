@@ -1,0 +1,27 @@
+$kind: http-request
+description: Follows the saved Latest Submission ID to prove the current record remains accessible.
+method: GET
+url: "{{baseUrl}}/student/submissions/{{ifn636_107_submission_id_limited}}"
+order: 2800
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const title = pm.environment.get("ifn636_107_title_limited");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_limited");
+
+      pm.test("Latest limited submission details are accessible", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Submission ID:</strong> " + submissionId);
+      });
+
+      pm.test("Submission details identify the expected assessment and file", function () {
+          pm.expect(html).to.include("<strong>Assessment:</strong> " + title);
+          pm.expect(html).to.include("<strong>Submitted File:</strong> ifn636-limit-attempt-3.pdf");
+      });

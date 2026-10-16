@@ -1,0 +1,51 @@
+$kind: http-request
+description: Second valid PDF submission to the unlimited assessment.
+method: POST
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_unlimited}}/submit"
+order: 3100
+headers:
+  Cookie: session={{student_session}}
+  Content-Type: multipart/form-data; boundary=IFN636UnlimitedAttempt2
+body:
+  type: text
+  content: |-
+    --IFN636UnlimitedAttempt2
+    Content-Disposition: form-data; name="submission_file"; filename="ifn636-unlimited-attempt-2.pdf"
+    Content-Type: application/pdf
+
+    %PDF-1.4
+    1 0 obj
+    << /Type /Catalog /Pages 2 0 R >>
+    endobj
+    2 0 obj
+    << /Type /Pages /Kids [3 0 R] /Count 1 >>
+    endobj
+    3 0 obj
+    << /Type /Page /Parent 2 0 R /MediaBox [0 0 72 72] >>
+    endobj
+    xref
+    0 4
+    0000000000 65535 f
+    0000000009 00000 n
+    0000000058 00000 n
+    0000000115 00000 n
+    trailer
+    << /Size 4 /Root 1 0 R >>
+    startxref
+    184
+    %%EOF
+    --IFN636UnlimitedAttempt2--
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const location = pm.response.headers.get("Location") || "";
+      const submissionId = pm.environment.get("ifn636_107_submission_id_unlimited");
+
+      pm.test("Second unlimited submission succeeds on the same record", function () {
+          pm.response.to.have.status(302);
+          pm.expect(location.split("/").pop()).to.equal(submissionId);
+      });

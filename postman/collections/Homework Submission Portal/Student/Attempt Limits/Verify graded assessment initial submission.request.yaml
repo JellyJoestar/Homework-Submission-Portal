@@ -1,0 +1,27 @@
+$kind: http-request
+description: Confirms the initial graded-case file and attempt count before marking.
+method: GET
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_graded}}"
+order: 4100
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_graded");
+
+      pm.test("Initial graded-case attempt is persisted", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Attempts:</strong> 1 of 3");
+          pm.expect(html).to.include("<strong>Remaining attempts:</strong> 2");
+      });
+
+      pm.test("Initial graded-case file and link are current", function () {
+          pm.expect(html).to.include("<strong>Latest filename:</strong> ifn636-graded-attempt-1.pdf");
+          pm.expect(html).to.include('href="/student/submissions/' + submissionId + '"');
+      });

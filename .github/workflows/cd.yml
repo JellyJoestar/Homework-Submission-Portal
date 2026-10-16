@@ -2,6 +2,12 @@
 name: IFN636 CD - Two-Runner Source Deployment
 
 on:
+  # Automatically deploy after changes are pushed or merged into main.
+  push:
+    branches:
+      - main
+
+  # Allow manual deployment from GitHub Actions.
   workflow_dispatch:
 
 permissions:

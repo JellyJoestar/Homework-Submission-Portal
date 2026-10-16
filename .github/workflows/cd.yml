@@ -1,3 +1,4 @@
+
 name: IFN636 CD - Two-Runner Source Deployment
 
 on:
@@ -11,6 +12,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ============================================================
+  # Server 1 - Source Deployment and Flask Application Activation
+  # ============================================================
   deploy-server-1:
     name: Deploy Source to Server 1
     if: github.ref == 'refs/heads/main'
@@ -18,31 +22,39 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # Step 1: Checkout the selected Git revision.
       - name: Checkout selected commit
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
+      # Step 2: Verify Runner 1 identity and commit.
       - name: Verify Runner 1
         shell: bash
         run: |
           set -euo pipefail
+
           test "$(whoami)" = "githubrunner"
           test "$(hostname)" = "ip-172-31-75-62"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
           echo "Runner 1 identity: PASS"
 
+      # Step 3: Package the selected source revision.
       - name: Package selected commit
         shell: bash
         run: |
           set -euo pipefail
+
           git archive --format=tar "$GITHUB_SHA" |
             gzip -n > "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
 
+      # Step 4: Install the versioned source release.
       - name: Install Server 1 source release
         shell: bash
         run: |
           set -euo pipefail
+
           archive="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
 
           bash scripts/install_source_release.sh \
@@ -52,6 +64,21 @@ jobs:
 
           echo "Server 1 source deployment: PASS"
 
+      # Step 5: Activate the selected release using PM2.
+      - name: Activate Server 1 Flask release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo -n -u ubuntu \
+            /usr/local/sbin/ifn636-activate-release \
+            "$GITHUB_SHA"
+
+          echo "Server 1 application activation: PASS"
+
+  # ============================================================
+  # Server 2 - Source Deployment and Flask Application Activation
+  # ============================================================
   deploy-server-2:
     name: Deploy Source to Server 2
     if: github.ref == 'refs/heads/main'
@@ -59,31 +86,39 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # Step 1: Checkout the selected Git revision.
       - name: Checkout selected commit
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
+      # Step 2: Verify Runner 2 identity and commit.
       - name: Verify Runner 2
         shell: bash
         run: |
           set -euo pipefail
+
           test "$(whoami)" = "githubrunner2"
           test "$(hostname)" = "ip-172-31-78-128"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
           echo "Runner 2 identity: PASS"
 
+      # Step 3: Package the selected source revision.
       - name: Package selected commit
         shell: bash
         run: |
           set -euo pipefail
+
           git archive --format=tar "$GITHUB_SHA" |
             gzip -n > "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
 
+      # Step 4: Install the versioned source release.
       - name: Install Server 2 source release
         shell: bash
         run: |
           set -euo pipefail
+
           archive="$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz"
 
           bash scripts/install_source_release.sh \
@@ -92,3 +127,15 @@ jobs:
           test "$(cat "/opt/homework-portal/releases/$GITHUB_SHA/DEPLOYED_COMMIT")" = "$GITHUB_SHA"
 
           echo "Server 2 source deployment: PASS"
+
+      # Step 5: Activate the selected release using PM2.
+      - name: Activate Server 2 Flask release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo -n -u ubuntu \
+            /usr/local/sbin/ifn636-activate-release \
+            "$GITHUB_SHA"
+
+          echo "Server 2 application activation: PASS"

@@ -98,4 +98,6 @@ VALUES
 
 -- Demo late submission data for Postman CI test
 INSERT INTO assessments (assessment_id, title, description, criteria, due_date, unit_id, allow_late, status)
-VALUES (3, 'Testing Late Assessment', 'Testing late submission rejection', 'criteria', '2026-01-01 12:00:00', 1, FALSE, 'Published');
+VALUES 
+    (3, 'Testing Late Assessment', 'Testing late submission rejection', 'criteria', '2026-01-01 12:00:00', 1, FALSE, 'Published'),
+    (4, 'Testing Late Assessment Allowed', 'Testing late submission acception', 'criteria', '2026-01-01 12:00:00', 1, TRUE, 'Published');

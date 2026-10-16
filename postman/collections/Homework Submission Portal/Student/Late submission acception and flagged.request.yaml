@@ -1,0 +1,31 @@
+$kind: http-request
+url: "{{baseUrl}}/student/assessments/4/submit"
+method: POST
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: formdata
+  content:
+    - type: file
+      key: submission_file
+      src:
+        - /C:/Users/nayut/Downloads/Test.pdf
+      description: ""
+      disabled: false
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Submission is flagged as late\", function () {\r
+
+      \    pm.expect(pm.response.text()).to.include(\"Submitted Late\");\r
+
+      });"
+    language: text/javascript
+order: 4000

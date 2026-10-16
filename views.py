@@ -42,6 +42,7 @@ from db import (
 from auth import redirect_for_role
 from decorators import student_required, teacher_required
 from policies import get_submission_policy, SubmissionContext
+from submission_checks import build_submission_check_chain
 
 views = Blueprint("views", __name__)
 RESOURCE_UPLOAD_FOLDER = os.path.join(
@@ -184,6 +185,20 @@ def student_submit_assessment(assessment_id):
     original_filename = secure_filename(file.filename)
     if not original_filename:
         return "Invalid submission filename.", 400
+    # Pre-check: reject invalid submissions before saving files.
+    submission = get_submission_by_assessment_and_student(
+        assessment_id, student_id
+    )
+
+    check_context = {
+        "mark": submission["mark"] if submission else None,
+        "attempt_count": submission["attempt_count"] if submission else 0,
+        "max_attempts": assessment["max_attempts"],
+    }
+
+    rejection = build_submission_check_chain().handle(check_context)
+    if rejection is not None:
+        return rejection
     extension = original_filename.rsplit(".", 1)[1].lower()
     stored_filename = f"{uuid.uuid4().hex}.{extension}"
     os.makedirs(SUBMISSION_UPLOAD_FOLDER, exist_ok=True)

@@ -594,6 +594,7 @@ def get_submission_by_assessment_and_student(assessment_id, student_id):
             original_filename,
             stored_filename,
             attempt_count,
+            mark,
             status,
             submitted_at
         FROM submissions

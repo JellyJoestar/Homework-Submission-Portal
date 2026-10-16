@@ -114,6 +114,11 @@ def test_late_submission_is_late_true(student_client, monkeypatch):
     saved_kwargs = {}
 
     monkeypatch.setattr(views, "get_assessment_by_id", lambda *args: fake_overdue_allowed)
+    monkeypatch.setattr(
+        views,
+        "get_submission_by_assessment_and_student",
+        lambda *args: None,
+    )
     monkeypatch.setattr(views, "save_submission_attempt",
                         lambda *args, **kwargs: (saved_kwargs.update(kwargs), {"submission_id": 99, "replaced_stored_filename": None})[1]
                         )
@@ -143,6 +148,11 @@ def test_on_time_submission_is_late_false(student_client, monkeypatch):
     saved_kwargs = {}
 
     monkeypatch.setattr(views, "get_assessment_by_id", lambda *args: fake_future_assessment)
+    monkeypatch.setattr(
+        views,
+        "get_submission_by_assessment_and_student",
+        lambda *args: None,
+    )
     monkeypatch.setattr(views, "save_submission_attempt",
                         lambda *args, **kwargs: (saved_kwargs.update(kwargs), {"submission_id": 100, "replaced_stored_filename": None})[1]
                         )

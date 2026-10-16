@@ -68,6 +68,18 @@ printf '%s\n' "$digest" > "$stage/SOURCE_ARCHIVE_SHA256"
 ln -s ../../uploads "$stage/uploads"
 ln -s /etc/homework-portal/.env "$stage/.env"
 
+# Grant the Flask runtime account read-only access.
+command -v setfacl >/dev/null || {
+  echo "ERROR: setfacl is not installed" >&2
+  exit 1
+}
+
+find "$stage" -xdev -type d \
+  -exec setfacl -m u:ubuntu:r-x {} +
+
+find "$stage" -xdev -type f \
+  -exec setfacl -m u:ubuntu:r-- {} +
+
 chmod 750 "$stage"
 mv -- "$stage" "$release"
 trap - EXIT

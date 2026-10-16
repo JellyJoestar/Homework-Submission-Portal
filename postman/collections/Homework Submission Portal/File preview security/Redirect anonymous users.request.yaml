@@ -1,0 +1,23 @@
+$kind: http-request
+description: Without a session, the preview redirects to the login form and returns no file content.
+method: GET
+url: "{{baseUrl}}/student/submissions/{{preview_submission_id}}/preview"
+order: 1000
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 302 (not logged in)", function () {
+          pm.response.to.have.status(302);
+      });
+
+      pm.test("Redirects to the login form", function () {
+          pm.expect(pm.response.headers.get("Location")).to.include("/login");
+      });
+
+      pm.test("Returns no file content", function () {
+          pm.expect(pm.response.text()).to.not.include("My Assessment Essay");
+      });

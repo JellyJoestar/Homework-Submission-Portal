@@ -1,0 +1,28 @@
+$kind: http-request
+description: Verifies unlimited attempt two updates the same current submission.
+method: GET
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_unlimited}}"
+order: 3150
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_unlimited");
+
+      pm.test("Unlimited attempt count increments to 2", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Attempts:</strong> 2 — Unlimited");
+          pm.expect(html).to.include("<strong>Remaining attempts:</strong> Unlimited");
+      });
+
+      pm.test("Second unlimited file is current on the same record", function () {
+          pm.expect(html).to.include("<strong>Latest filename:</strong> ifn636-unlimited-attempt-2.pdf");
+          pm.expect(html).to.not.include("ifn636-unlimited-attempt-1.pdf");
+          pm.expect(html).to.include('href="/student/submissions/' + submissionId + '"');
+      });

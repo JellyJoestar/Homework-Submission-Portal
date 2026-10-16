@@ -1,0 +1,28 @@
+$kind: http-request
+description: Verifies attempt two replaced the current filename without creating a new submission ID.
+method: GET
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_limited}}"
+order: 2300
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_limited");
+
+      pm.test("Second attempt and remaining quota are persisted", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Attempts:</strong> 2 of 3");
+          pm.expect(html).to.include("<strong>Remaining attempts:</strong> 1");
+      });
+
+      pm.test("Latest Submission is the second file on the same record", function () {
+          pm.expect(html).to.include("<strong>Latest filename:</strong> ifn636-limit-attempt-2.pdf");
+          pm.expect(html).to.not.include("ifn636-limit-attempt-1.pdf");
+          pm.expect(html).to.include('href="/student/submissions/' + submissionId + '"');
+      });

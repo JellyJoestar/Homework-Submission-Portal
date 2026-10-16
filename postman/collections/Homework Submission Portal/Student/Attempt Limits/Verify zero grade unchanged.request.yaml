@@ -1,0 +1,27 @@
+$kind: http-request
+description: Reads the Teacher page again to prove rejection preserved mark zero and feedback.
+method: GET
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}"
+order: 4600
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const html = pm.response.text().replace(/\s+/g, " ");
+      const submissionId = pm.environment.get("ifn636_107_submission_id_graded");
+
+      pm.test("Graded submission remains accessible after rejected resubmission", function () {
+          pm.response.to.have.status(200);
+          pm.expect(html).to.include("<strong>Submission ID:</strong> " + submissionId);
+          pm.expect(html).to.include("<strong>Submitted File:</strong> ifn636-graded-attempt-1.pdf");
+      });
+
+      pm.test("Mark zero and feedback remain unchanged", function () {
+          pm.expect(html).to.include('value="0.00"');
+          pm.expect(html).to.include(">IFN636-107 zero-grade feedback</textarea>");
+      });

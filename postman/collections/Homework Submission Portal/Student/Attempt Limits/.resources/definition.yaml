@@ -1,0 +1,4 @@
+$kind: collection
+name: Attempt Limits
+description: Independent IFN636-107 tests for sequential submission attempt limits.
+order: 3000

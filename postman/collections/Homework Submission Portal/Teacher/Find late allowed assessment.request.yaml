@@ -1,0 +1,34 @@
+$kind: http-request
+description: |-
+  Setup: the create route redirects to the list without the new id, so this
+  request finds the late-allowed assessment by its title and saves
+  `late_allowed_assessment_id`.
+method: GET
+url: "{{baseUrl}}/teacher/assessments"
+order: 7400
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      // The first assessment link after the title is the new assessment
+      const title = pm.environment.get("late_allowed_title");
+      const html = pm.response.text();
+      const start = html.indexOf(title);
+      const link = start === -1 ? null : html.slice(start).match(/\/teacher\/assessments\/(\d+)/);
+
+      pm.test("The late-allowed assessment is in the list", function () {
+          pm.expect(link, title).to.not.be.null;
+      });
+
+      if (link) {
+          pm.environment.set("late_allowed_assessment_id", link[1]);
+      }

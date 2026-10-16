@@ -54,3 +54,7 @@ values:
     value: ''
   - key: late_assessment_id
     value: ''
+  - key: late_allowed_title
+    value: ''
+  - key: late_allowed_assessment_id
+    value: ''

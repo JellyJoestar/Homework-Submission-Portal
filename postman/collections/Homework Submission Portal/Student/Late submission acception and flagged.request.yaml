@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/student/assessments/4/submit"
+url: "{{baseUrl}}/student/assessments//{{late_allowed_assessment_id}}/submit"
 method: POST
 headers:
   Cookie: session={{student_session}}
@@ -29,3 +29,5 @@ scripts:
       });"
     language: text/javascript
 order: 4000
+settings:
+  disableCookies: true

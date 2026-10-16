@@ -9,7 +9,7 @@ body:
     - type: file
       key: submission_file
       src:
-        - /C:/Users/nayut/Downloads/QUT/QUT Semester 2/IFN636 Software Life Cycle Management/IFN636 Assignment 2/Homework-Submission-Portal/tests/files/report.pdf
+        - tests/files/report.pdf
       description: ""
       disabled: false
 scripts:

@@ -538,6 +538,88 @@ def publish_assessment_with_rubric(assessment_id):
         )
 
 
+class SubmissionNotFoundError(Exception):
+    """The submission requested for grading no longer exists."""
+
+
+def get_criterion_grades(submission_id):
+    connection = get_db_connection()
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT submission_id, criterion_id, mark, comment FROM criterion_grades "
+            "WHERE submission_id = %s ORDER BY criterion_id",
+            (submission_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        if cursor is not None:
+            cursor.close()
+        connection.close()
+
+
+@contextmanager
+def grading_transaction(submission_id):
+    """Match submission uploads' lock order: assessment, then submission.
+
+    The initial lookup only discovers the parent; both rows are rechecked under
+    locks before reading the rubric or writing marks. The shared parent lock also
+    prevents rubric edits from racing with grading.
+    """
+    connection = get_db_connection()
+    cursor = None
+    try:
+        connection.start_transaction()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT assessment_id FROM submissions WHERE submission_id = %s", (submission_id,))
+        parent = cursor.fetchone()
+        if parent is None:
+            raise SubmissionNotFoundError
+        assessment_id = parent["assessment_id"]
+        cursor.execute("SELECT assessment_id, status FROM assessments WHERE assessment_id = %s FOR UPDATE", (assessment_id,))
+        assessment = cursor.fetchone()
+        if assessment is None:
+            raise SubmissionNotFoundError
+        if assessment["status"] == "Draft":
+            raise RubricValidationError({"grading": "Grading is available after assessment publication."})
+        cursor.execute(
+            "SELECT submission_id, assessment_id, mark FROM submissions "
+            "WHERE submission_id = %s AND assessment_id = %s FOR UPDATE",
+            (submission_id, assessment_id),
+        )
+        submission = cursor.fetchone()
+        if submission is None:
+            raise SubmissionNotFoundError
+        cursor.execute(
+            "SELECT criterion_id, assessment_id, title, description, weight "
+            "FROM rubric_criteria WHERE assessment_id = %s ORDER BY criterion_id",
+            (assessment_id,),
+        )
+        rubric = AssessmentRubric(assessment_id, cursor.fetchall())
+        yield cursor, submission, rubric
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            connection.close()
+
+
+def store_criterion_grades(cursor, grading):
+    """The caller's transaction owns commit/rollback for the complete save."""
+    for grade in grading.grades:
+        cursor.execute(
+            "INSERT INTO criterion_grades (submission_id, criterion_id, mark, comment) "
+            "VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE mark = %s, comment = %s",
+            (grade.submission_id, grade.criterion_id, grade.mark, grade.comment, grade.mark, grade.comment),
+        )
+
+
 def get_submissions_by_student(student_id):
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)

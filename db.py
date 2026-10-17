@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import mysql.connector
 from dotenv import load_dotenv
 from models import User
-from rubric.models import AssessmentRubric
+from rubric.models import AssessmentRubric, RubricNotEditableError
 
 load_dotenv()
 
@@ -519,6 +519,20 @@ def delete_rubric_criterion(assessment_id, criterion_id):
             WHERE criterion_id = %s AND assessment_id = %s
             """,
             (criterion_id, assessment_id),
+        )
+
+
+def publish_assessment_with_rubric(assessment_id):
+    with _rubric_transaction(assessment_id) as (cursor, assessment, rubric):
+        if assessment["status"] != "Draft":
+            raise RubricNotEditableError
+        rubric.validate_for_publication()
+        cursor.execute(
+            """
+            UPDATE assessments SET status = 'Published'
+            WHERE assessment_id = %s AND status = 'Draft'
+            """,
+            (assessment_id,),
         )
 
 

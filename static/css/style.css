@@ -518,6 +518,46 @@ input[type="file"]::file-selector-button {
     border-bottom: 1px solid var(--line);
 }
 
+.rubric-panel {
+    margin: 28px 0;
+}
+
+.rubric-table-container {
+    overflow-x: auto;
+}
+
+.rubric-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.rubric-table caption {
+    padding-bottom: 10px;
+    color: var(--muted);
+    text-align: left;
+}
+
+.rubric-table th,
+.rubric-table td {
+    padding: 12px;
+    border: 1px solid var(--line);
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.rubric-table thead {
+    background: var(--surface-soft);
+}
+
+.rubric-description {
+    white-space: pre-wrap;
+}
+
+.rubric-total {
+    margin-top: 16px;
+}
+
 .file-preview-frame {
     display: block;
     width: 100%;

@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from auth import auth, login_manager
 from views import views
 from preview.routes import preview
+from rubric.routes import rubric
 
 load_dotenv()
 
@@ -23,6 +24,7 @@ login_manager.init_app(app)
 app.register_blueprint(auth)
 app.register_blueprint(views)
 app.register_blueprint(preview)
+app.register_blueprint(rubric)
 
 if __name__ == "__main__":
     app.run(debug=True)

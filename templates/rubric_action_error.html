@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="app-page teacher-page assessment-detail-page">
+    <h1>Assessment Could Not Be Published</h1>
+    <p>Assessment: {{ assessment.title }}</p>
+    <ul class="field-error" role="alert">
+        {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+    <a class="button-link secondary-link" href="{{ url_for('views.view_assessment_details', assessment_id=assessment.assessment_id) }}">Back to Assessment Rubric</a>
+</section>
+{% endblock %}

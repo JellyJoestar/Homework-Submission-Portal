@@ -37,11 +37,15 @@ from db import (
     get_submission_by_assessment_and_student,
     get_submissions_by_assessment,
     get_submission_for_teacher,
-    update_submission_mark_feedback
+    update_submission_mark_feedback,
+    get_rubric_by_assessment,
+    publish_assessment_with_rubric
 )
 from auth import redirect_for_role
 from decorators import student_required, teacher_required
 from policies import get_submission_policy, SubmissionContext
+from forms import RubricActionForm, RubricCriterionForm
+from rubric.models import RubricNotEditableError, RubricValidationError
 
 views = Blueprint("views", __name__)
 RESOURCE_UPLOAD_FOLDER = os.path.join(
@@ -274,8 +278,18 @@ def view_assessment_details(assessment_id):
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return "Assessment not found!", 404
-    resources = get_resources_by_assessment(assessment_id)
-    return render_template("assessment_details.html", assessment=assessment, resources=resources)
+    return render_teacher_assessment(assessment)
+
+
+def render_teacher_assessment(assessment, criterion_form=None):
+    return render_template(
+        "assessment_details.html",
+        assessment=assessment,
+        resources=get_resources_by_assessment(assessment["assessment_id"]),
+        rubric=get_rubric_by_assessment(assessment["assessment_id"]),
+        criterion_form=criterion_form or RubricCriterionForm(),
+        rubric_action_form=RubricActionForm(),
+    )
 
 @views.route("/teacher/assessments/<int:assessment_id>/submissions")
 @teacher_required
@@ -439,7 +453,16 @@ def publish_assessment(assessment_id):
         return "Assessment not found!", 404
     if assessment["status"] != "Draft":
         return "Only Draft assessments can be published.", 400
-    update_assessment_status(assessment_id, "Draft", "Published")
+    try:
+        publish_assessment_with_rubric(assessment_id)
+    except RubricValidationError as error:
+        return render_template(
+            "rubric_action_error.html", assessment=assessment, errors=error.errors.values()
+        ), 400
+    except RubricNotEditableError:
+        return "Only Draft assessments can be published.", 400
+    except AssessmentNotFoundError:
+        return "Assessment not found!", 404
     return redirect(url_for("views.view_assessment_details", assessment_id=assessment_id))
 
 @views.route("/teacher/assessments/<int:assessment_id>/close", methods=["POST"])

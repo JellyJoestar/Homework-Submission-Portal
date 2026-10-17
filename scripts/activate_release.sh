@@ -25,6 +25,7 @@ test "$(cat "$release/DEPLOYED_COMMIT")" = "$sha"
 test -r "$release/app.py"
 test -r "$release/requirements.txt"
 test -r "$release/.env"
+test -x "$venv/bin/python"
 test -x "$venv/bin/gunicorn"
 
 # Validate shared NFS storage before restarting Flask.
@@ -103,14 +104,35 @@ start_release() {
 if [[ "$previous" == "$release" ]]; then
   check_health "$release"
   echo "Release already active: $sha"
+  "$pm2" status || echo "WARNING: Unable to display PM2 status" >&2
   exit 0
 fi
+
+# ============================================================
+# Install Python Dependencies Before Release Activation
+# ============================================================
+
+echo "Installing dependencies for release: $sha"
+
+"$venv/bin/python" -m pip install \
+  --disable-pip-version-check \
+  -r "$release/requirements.txt"
+
+# Detect dependency conflicts after installation.
+"$venv/bin/python" -m pip check
+
+echo "Dependency installation: PASS"
+
+# ============================================================
+# Activate New Release
+# ============================================================
 
 echo "Activating release: $sha"
 
 if start_release "$release" && "$pm2" save; then
   echo "Application activation: PASS"
   echo "Running release: $sha"
+  "$pm2" status || echo "WARNING: Unable to display PM2 status" >&2
   exit 0
 fi
 

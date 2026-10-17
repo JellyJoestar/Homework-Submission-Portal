@@ -231,6 +231,7 @@ def test_submission_one_minute_before_due_date(student_client, monkeypatch):
                         lambda *args, **kwargs: (saved_kwargs.update(kwargs), {"submission_id": 100, "replaced_stored_filename": None})[1]
                         )
     monkeypatch.setattr(views, "remove_submission_file", lambda *args: None)
+    monkeypatch.setattr(views, "get_submission_by_assessment_and_student", lambda *args: None)
     
     # Act
     response = student_client.post("/student/assessments/13/submit", 

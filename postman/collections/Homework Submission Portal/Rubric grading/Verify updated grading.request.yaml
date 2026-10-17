@@ -1,0 +1,20 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}"
+order: 3000
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Reload shows the latest mark, comment and calculated result", function () {
+          pm.response.to.have.status(200);
+          const html = pm.response.text().replace(/\s+/g, " ");
+          pm.expect(html).to.include('value="84.50"');
+          pm.expect(html).to.include(">Revised criterion comment</textarea>");
+          pm.expect(html).to.include("Final grade:</strong> 84.50");
+      });

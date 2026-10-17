@@ -7,6 +7,7 @@ from auth import auth, login_manager
 from views import views
 from preview.routes import preview
 from rubric.routes import rubric
+from rubric.grading_routes import grading
 
 load_dotenv()
 
@@ -25,6 +26,7 @@ app.register_blueprint(auth)
 app.register_blueprint(views)
 app.register_blueprint(preview)
 app.register_blueprint(rubric)
+app.register_blueprint(grading)
 
 if __name__ == "__main__":
     app.run(debug=True)

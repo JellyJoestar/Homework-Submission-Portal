@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import mysql.connector
 from dotenv import load_dotenv
 from models import User
-from rubric.models import AssessmentRubric, RubricNotEditableError
+from rubric.models import AssessmentRubric, RubricNotEditableError, RubricValidationError
 
 load_dotenv()
 
@@ -538,6 +538,95 @@ def publish_assessment_with_rubric(assessment_id):
         )
 
 
+class SubmissionNotFoundError(Exception):
+    """The submission requested for grading no longer exists."""
+
+
+def get_criterion_grades(submission_id):
+    connection = get_db_connection()
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT submission_id, criterion_id, mark, comment FROM criterion_grades "
+            "WHERE submission_id = %s ORDER BY criterion_id",
+            (submission_id,),
+        )
+        return cursor.fetchall()
+    finally:
+        if cursor is not None:
+            cursor.close()
+        connection.close()
+
+
+@contextmanager
+def grading_transaction(submission_id):
+    """Match submission uploads' lock order: assessment, then submission.
+
+    The initial lookup only discovers the parent; both rows are rechecked under
+    locks before reading the rubric or writing marks. The shared parent lock also
+    prevents rubric edits from racing with grading.
+    """
+    connection = get_db_connection()
+    cursor = None
+    try:
+        connection.start_transaction()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT assessment_id FROM submissions WHERE submission_id = %s", (submission_id,))
+        parent = cursor.fetchone()
+        if parent is None:
+            raise SubmissionNotFoundError
+        assessment_id = parent["assessment_id"]
+        cursor.execute("SELECT assessment_id, status FROM assessments WHERE assessment_id = %s FOR UPDATE", (assessment_id,))
+        assessment = cursor.fetchone()
+        if assessment is None:
+            raise SubmissionNotFoundError
+        if assessment["status"] == "Draft":
+            raise RubricValidationError({"grading": "Grading is available after assessment publication."})
+        cursor.execute(
+            "SELECT submission_id, assessment_id, mark FROM submissions "
+            "WHERE submission_id = %s AND assessment_id = %s FOR UPDATE",
+            (submission_id, assessment_id),
+        )
+        submission = cursor.fetchone()
+        if submission is None:
+            raise SubmissionNotFoundError
+        cursor.execute(
+            "SELECT criterion_id, assessment_id, title, description, weight "
+            "FROM rubric_criteria WHERE assessment_id = %s ORDER BY criterion_id FOR UPDATE",
+            (assessment_id,),
+        )
+        rubric = AssessmentRubric(assessment_id, cursor.fetchall())
+        yield cursor, submission, rubric
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            connection.close()
+
+
+def store_criterion_grades(cursor, grading):
+    """The caller's transaction owns commit/rollback for the complete save."""
+    for grade in grading.grades:
+        cursor.execute(
+            "INSERT INTO criterion_grades (submission_id, criterion_id, mark, comment) "
+            "VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE mark = %s, comment = %s",
+            (grade.submission_id, grade.criterion_id, grade.mark, grade.comment, grade.mark, grade.comment),
+        )
+
+
+def store_rubric_result(cursor, grading):
+    cursor.execute(
+        "UPDATE submissions SET mark = %s WHERE submission_id = %s AND assessment_id = %s",
+        (grading.final_grade, grading.submission_id, grading.rubric.assessment_id),
+    )
+
+
 def get_submissions_by_student(student_id):
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
@@ -685,23 +774,16 @@ def get_submission_for_teacher(submission_id):
     return submission
 
 def update_submission_mark_feedback(submission_id, mark, feedback):
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-        UPDATE submissions
-        SET
-            mark = %s,
-            feedback = %s
-        WHERE submission_id = %s
-        """,
-        (mark, feedback, submission_id)
-    )
-    connection.commit()
-    updated_rows = cursor.rowcount
-    cursor.close()
-    connection.close()
-    return updated_rows
+    # Keep manual grading for historical assessments without rubric criteria.
+    # Recheck under locks so this endpoint cannot overwrite a calculated result.
+    with grading_transaction(submission_id) as (cursor, submission, rubric):
+        if rubric.criteria:
+            raise RubricValidationError({"grading": "Use complete rubric grading for this submission."})
+        cursor.execute(
+            "UPDATE submissions SET mark = %s, feedback = %s WHERE submission_id = %s",
+            (mark, feedback, submission_id),
+        )
+        return cursor.rowcount
 
 def get_submission_by_assessment_and_student(assessment_id, student_id):
     connection = get_db_connection()

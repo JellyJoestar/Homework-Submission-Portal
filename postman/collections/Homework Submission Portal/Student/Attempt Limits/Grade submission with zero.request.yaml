@@ -1,19 +1,38 @@
 $kind: http-request
-description: Uses the Teacher endpoint to save the zero-grade edge case and feedback.
+description: Saves complete rubric grading with a zero mark and optional criterion comment.
 method: POST
-url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}/mark-feedback"
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}/rubric-grading"
 order: 4200
 headers:
   Cookie: session={{teacher_session}}
 body:
   type: urlencoded
   content:
-    mark: "0"
-    feedback: IFN636-107 zero-grade feedback
+    criterion_id: "{{ifn636_107_grading_criterion_id}}"
+    "mark_{{ifn636_107_grading_criterion_id}}": "0"
+    "comment_{{ifn636_107_grading_criterion_id}}": IFN636-107 zero-grade feedback
+    csrf_token: "{{teacher_csrf_token}}"
 settings:
   followRedirects: false
   disableCookies: true
 scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.environment.unset("ifn636_107_grading_criterion_id");
+      pm.sendRequest({
+          url: pm.variables.replaceIn("{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}"),
+          method: "GET",
+          header: { Cookie: "session=" + pm.environment.get("teacher_session") }
+      }, function (err, res) {
+          const ids = err ? [] : Array.from(res.text().matchAll(/data-grading-criterion-id="(\d+)"/g), match => match[1]);
+          pm.test("The grading fixture has exactly one criterion", function () {
+              pm.expect(ids).to.have.lengthOf(1);
+          });
+          if (ids.length === 1) {
+              pm.environment.set("ifn636_107_grading_criterion_id", ids[0]);
+          }
+      });
   - type: afterResponse
     language: text/javascript
     code: |-

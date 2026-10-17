@@ -5,7 +5,7 @@ import pytest
 
 import db
 import views
-
+from werkzeug.datastructures import FileStorage
 
 ASSESSMENT_ID = 7
 STUDENT_ID = 2
@@ -25,7 +25,7 @@ def upload(filename="answer.pdf", content=b"valid submission"):
 
 def install_submission_double(monkeypatch, state, max_attempts):
     def save_submission_attempt(
-        assessment_id, student_id, original_filename, stored_filename
+        assessment_id, student_id, original_filename, stored_filename, is_late=False
     ):
         assert assessment_id == ASSESSMENT_ID
         assert student_id == STUDENT_ID
@@ -50,6 +50,15 @@ def install_submission_double(monkeypatch, state, max_attempts):
         }
 
     monkeypatch.setattr(views, "save_submission_attempt", save_submission_attempt)
+    monkeypatch.setattr(
+        views,
+        "get_submission_by_assessment_and_student",
+        lambda assessment_id, student_id: (
+            {**state, "mark": state.get("mark")}
+            if state.get("submission_id") is not None
+            else None
+        ),
+    )
 
 
 def configure_submission_route(monkeypatch, tmp_path, max_attempts=3):
@@ -58,6 +67,11 @@ def configure_submission_route(monkeypatch, tmp_path, max_attempts=3):
         views,
         "get_assessment_by_id",
         lambda assessment_id: assessment(max_attempts=max_attempts),
+    )
+    monkeypatch.setattr(
+        views,
+        "get_submission_by_assessment_and_student",
+        lambda assessment_id, student_id: None,
     )
 
 
@@ -261,7 +275,7 @@ def test_invalid_uploads_do_not_call_database_or_create_files(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: pytest.fail("invalid uploads must not consume attempts"),
+        lambda *args, **kwargs: pytest.fail("invalid uploads must not consume attempts"),
     )
 
     response = student_client.post(
@@ -284,7 +298,7 @@ def test_database_failure_discards_new_file_without_replacing_current_file(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: (_ for _ in ()).throw(RuntimeError("database unavailable")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("database unavailable")),
     )
 
     with pytest.raises(RuntimeError, match="database unavailable"):
@@ -307,7 +321,7 @@ def test_unknown_commit_outcome_keeps_new_file_to_protect_possible_reference(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: (_ for _ in ()).throw(
+        lambda *args, **kwargs: (_ for _ in ()).throw(
             db.SubmissionCommitOutcomeUnknownError("connection lost during commit")
         ),
     )
@@ -354,7 +368,7 @@ def test_non_published_assessment_remains_forbidden(
     monkeypatch.setattr(
         views,
         "save_submission_attempt",
-        lambda *args: pytest.fail("closed assessments must not accept submissions"),
+        lambda *args, **kwargs: pytest.fail("closed assessments must not accept submissions"),
     )
 
     response = student_client.post(
@@ -555,3 +569,59 @@ def test_database_reports_unknown_commit_outcome(monkeypatch):
         db.save_submission_attempt(7, 2, "answer.pdf", "new.pdf")
 
     assert connection.rolled_back and not connection.committed
+
+
+@pytest.mark.parametrize(
+    "mark, attempt_count, expected_message",
+    [
+        (None, 3, b"Maximum submission limit reached"),
+        (85, 1, b"Graded submissions cannot be resubmitted."),
+        (0, 1, b"Graded submissions cannot be resubmitted."),
+    ],
+)
+def test_precheck_rejects_before_file_save(
+    student_client,
+    monkeypatch,
+    tmp_path,
+    mark,
+    attempt_count,
+    expected_message,
+):
+    configure_submission_route(
+        monkeypatch, tmp_path, max_attempts=3
+    )
+
+    monkeypatch.setattr(
+        views,
+        "get_submission_by_assessment_and_student",
+        lambda assessment_id, student_id: {
+            "submission_id": 41,
+            "attempt_count": attempt_count,
+            "mark": mark,
+        },
+    )
+
+    # Fail immediately if a rejected upload reaches file.save().
+    def forbidden_save(*args, **kwargs):
+        pytest.fail("Pre-check rejection must not save a file")
+
+    monkeypatch.setattr(FileStorage, "save", forbidden_save)
+
+    # A rejected request must not reach the database write either.
+    monkeypatch.setattr(
+        views,
+        "save_submission_attempt",
+        lambda *args, **kwargs: pytest.fail(
+            "Rejected request reached database write"
+        ),
+    )
+
+    response = student_client.post(
+        f"/student/assessments/{ASSESSMENT_ID}/submit",
+        data=upload("rejected.pdf"),
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 403
+    assert expected_message in response.data
+    assert list(tmp_path.iterdir()) == []

@@ -1,7 +1,7 @@
 """Functional tests for IFN636-59: Allowing late submission configuration."""
 import views
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 
 UNIT = {"unit_id": 1, "unit_code": "IFN636", "unit_name": "Software Life Cycle Management"}
 
@@ -207,3 +207,64 @@ def test_student_sees_late_badge(student_client, monkeypatch):
     # Assert
     assert response.status_code == 200
     assert b"Submitted Late" in response.data
+    
+
+
+def test_submission_one_minute_before_due_date(student_client, monkeypatch):
+    due_date = datetime(2026, 1, 1, 12, 0)
+    one_minute_before = due_date - timedelta(minutes=1)
+    fake_assessment = {"assessment_id": 13,
+                       "title": "One minute before submission",
+                       "description": "description",
+                       "criteria": "criteria",
+                       "due_date": due_date,           
+                       "unit_id": 1,
+                       "status": "Published",
+                       "max_attempts": 1,
+                       "allow_late": False
+                       }
+    saved_kwargs = {}
+
+    monkeypatch.setattr(views, "get_assessment_by_id", lambda *args: fake_assessment)
+    monkeypatch.setattr(views, "datetime", type("FakeDateTime", (datetime,), {"now": classmethod(lambda *args: one_minute_before)}))
+    monkeypatch.setattr(views, "save_submission_attempt",
+                        lambda *args, **kwargs: (saved_kwargs.update(kwargs), {"submission_id": 100, "replaced_stored_filename": None})[1]
+                        )
+    monkeypatch.setattr(views, "remove_submission_file", lambda *args: None)
+    
+    # Act
+    response = student_client.post("/student/assessments/13/submit", 
+                                   data={"submission_file": (io.BytesIO(b"fake submission file"), "report.pdf")}
+                                   )
+
+    # Assert
+    assert response.status_code == 302
+    assert saved_kwargs.get("is_late") is False
+
+
+
+def test_submission_one_minute_after_due_date_is_blocked(student_client, monkeypatch):
+    due_date = datetime(2026, 1, 1, 12, 0)
+    one_minute_after = due_date + timedelta(minutes=1)
+    fake_assessment = {"assessment_id": 14,
+                       "title": "One minute after submission",
+                       "description": "description",
+                       "criteria": "criteria",
+                       "due_date": due_date,            
+                       "unit_id": 1,
+                       "status": "Published",
+                       "max_attempts": 1,
+                       "allow_late": False
+                       }
+
+    monkeypatch.setattr(views, "get_assessment_by_id", lambda *args: fake_assessment)
+    monkeypatch.setattr(views, "datetime", type("FakeDateTime", (datetime,), {"now": classmethod(lambda *args: one_minute_after)}))
+    
+    # Act
+    response = student_client.post("/student/assessments/14/submit",
+                                   data={"submission_file": (io.BytesIO(b"fake submission file"), "report.pdf")}
+                                   )
+    
+    # Assert
+    assert response.status_code == 403
+    assert b"The due date has passed. Late submissions are not allowed." in response.data

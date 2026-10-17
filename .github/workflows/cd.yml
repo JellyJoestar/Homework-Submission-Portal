@@ -2,6 +2,12 @@
 name: IFN636 CD - Two-Runner Source Deployment
 
 on:
+  # Automatically deploy after changes are pushed or merged into main.
+  push:
+    branches:
+      - main
+
+  # Allow manual deployment from GitHub Actions.
   workflow_dispatch:
 
 permissions:
@@ -13,12 +19,43 @@ concurrency:
 
 jobs:
   # ============================================================
+  # Run Pytest Before Deployment
+  # ============================================================
+  test:
+    name: Run pytest before deployment
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run pytest
+        run: python -m pytest -v
+
+  # ============================================================
   # Server 1 - Source Deployment and Flask Application Activation
   # ============================================================
   deploy-server-1:
     name: Deploy Source to Server 1
     if: github.ref == 'refs/heads/main'
+    needs: test
     runs-on: [self-hosted, Linux, X64, Server-1]
+    environment: production
     timeout-minutes: 10
 
     steps:
@@ -82,7 +119,9 @@ jobs:
   deploy-server-2:
     name: Deploy Source to Server 2
     if: github.ref == 'refs/heads/main'
+    needs: deploy-server-1
     runs-on: [self-hosted, Linux, X64, Server-2]
+    environment: production
     timeout-minutes: 10
 
     steps:

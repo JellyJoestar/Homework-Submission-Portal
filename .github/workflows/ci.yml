@@ -78,6 +78,11 @@ jobs:
       - name: Load the database schema and demo accounts
         run: mysql -h 127.0.0.1 -P 3306 -u root -proot < database/homework-portal.sql
 
+      - name: Verify rubric rules against MySQL
+        env:
+          RUBRIC_MYSQL_TESTS: "1"
+        run: python -m pytest -q tests/integration/test_rubric_mysql.py
+
       - name: Start the app
         run: |
           nohup python -m flask --app app run --port 5000 > flask.log 2>&1 &

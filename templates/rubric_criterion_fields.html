@@ -1,0 +1,28 @@
+{{ form.hidden_tag() }}
+{% if form.csrf_token is defined %}
+    {% for error in form.csrf_token.errors %}
+        <p class="field-error" role="alert">{{ error }} Please reload the page.</p>
+    {% endfor %}
+{% endif %}
+<div class="form-field">
+    {{ form.title.label }}
+    {{ form.title(required=True, maxlength=150) }}
+    {% for error in form.title.errors %}
+        <p class="field-error" role="alert">{{ error }}</p>
+    {% endfor %}
+</div>
+<div class="form-field">
+    {{ form.weight.label }}
+    {{ form.weight(type="number", min="0.01", max="100", step="0.01", required=True) }}
+    {% for error in form.weight.errors %}
+        <p class="field-error" role="alert">{{ error }}</p>
+    {% endfor %}
+</div>
+<div class="form-field form-field-wide">
+    {{ form.description.label }}
+    {{ form.description(rows=3, required=True) }}
+    {% for error in form.description.errors %}
+        <p class="field-error" role="alert">{{ error }}</p>
+    {% endfor %}
+</div>
+{{ form.submit() }}

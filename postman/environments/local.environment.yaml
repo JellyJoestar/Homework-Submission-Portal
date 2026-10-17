@@ -20,6 +20,8 @@ values:
     value: ''
   - key: teacher_session
     value: ''
+  - key: teacher_csrf_token
+    value: ''
   - key: student_session
     value: ''
   - key: logged_out_session

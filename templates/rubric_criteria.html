@@ -1,0 +1,45 @@
+<section class="rubric-panel" aria-labelledby="rubric-heading" data-rubric-count="{{ rubric.criteria | length }}">
+    <h2 id="rubric-heading">Assessment Rubric</h2>
+    {% if rubric.criteria %}
+        <div class="rubric-table-container">
+            <table class="rubric-table{% if assessment.status == 'Draft' %} rubric-table-editable{% endif %}" aria-labelledby="rubric-heading">
+                <thead>
+                    <tr>
+                        <th scope="col">Title</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Weight</th>
+                        {% if assessment.status == "Draft" %}<th scope="col">Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for criterion in rubric.criteria %}
+                        <tr data-criterion-id="{{ criterion.criterion_id }}">
+                            <th scope="row">{{ criterion.title }}</th>
+                            <td class="rubric-description">{{ criterion.description }}</td>
+                            <td>{{ "%.2f" | format(criterion.weight) }}%</td>
+                            {% if assessment.status == "Draft" %}
+                                <td>
+                                    <a class="button-link" href="{{ url_for('rubric.edit_criterion', assessment_id=assessment.assessment_id, criterion_id=criterion.criterion_id) }}">Edit</a>
+                                    <form class="inline-form" method="POST" action="{{ url_for('rubric.remove_criterion', assessment_id=assessment.assessment_id, criterion_id=criterion.criterion_id) }}">
+                                        {{ rubric_action_form.hidden_tag() }}
+                                        <button type="submit">Remove</button>
+                                    </form>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No rubric criteria have been configured.</p>
+    {% endif %}
+    <p class="rubric-total"><strong>Total weight:</strong> {{ "%.2f" | format(rubric.total_weight) }}%</p>
+    {% if assessment.status == "Draft" %}
+        <p>Before publishing, add at least one criterion and ensure the total weight is 100%.</p>
+        <h3>Add Rubric Criterion</h3>
+        <form class="assessment-form rubric-criterion-form" method="POST" action="{{ url_for('rubric.add_criterion', assessment_id=assessment.assessment_id) }}">
+            {% with form = criterion_form %}{% include "rubric_criterion_fields.html" %}{% endwith %}
+        </form>
+    {% endif %}
+</section>

@@ -1,0 +1,27 @@
+$kind: http-request
+description: FR-RUB-01 setup adds a valid 100% rubric before this scenario publishes its assessment.
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_107_assessment_id_graded}}/rubric"
+order: 1430
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    title: Assessment criterion
+    description: Evaluate the submitted assessment against its requirements.
+    weight: "100"
+    csrf_token: "{{teacher_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A valid rubric is saved before publication", function () {
+          pm.response.to.have.status(302);
+          const id = pm.environment.get("ifn636_107_assessment_id_graded");
+          pm.expect(pm.response.headers.get("Location"))
+              .to.include("/teacher/assessments/" + id);
+      });

@@ -22,7 +22,7 @@
     </div>
 
     <div class="detail-row detail-block">
-        <strong>Criteria:</strong>
+        <strong>Assessment Guidance:</strong>
         {{ assessment.criteria or "Not specified" }}
     </div>
 
@@ -45,6 +45,8 @@
         <strong>Status:</strong>
         {{ assessment.status }}
     </div>
+
+    {% include "rubric_criteria.html" %}
 
     <h2>Supporting Resources</h2>
     {% if resources %}

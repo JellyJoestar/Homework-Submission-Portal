@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="app-page teacher-page assessment-form-page">
+    <h1>Edit Rubric Criterion</h1>
+    <p>Assessment: {{ assessment.title }}</p>
+    <form class="assessment-form rubric-criterion-form" method="POST" action="{{ url_for('rubric.edit_criterion', assessment_id=assessment.assessment_id, criterion_id=criterion.criterion_id) }}">
+        {% include "rubric_criterion_fields.html" %}
+    </form>
+    <p class="page-action"><a class="button-link secondary-link" href="{{ url_for('views.view_assessment_details', assessment_id=assessment.assessment_id) }}">Back to Assessment</a></p>
+</section>
+{% endblock %}

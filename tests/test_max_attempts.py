@@ -6,6 +6,7 @@ import pytest
 
 import db
 import views
+from rubric.models import AssessmentRubric
 
 
 UNIT = {"unit_id": 1, "unit_code": "IFN636", "unit_name": "Software Life Cycle Management"}
@@ -180,6 +181,7 @@ def test_create_and_edit_forms_show_max_attempts(teacher_client, monkeypatch):
 def test_teacher_details_display_unlimited(teacher_client, monkeypatch):
     monkeypatch.setattr(views, "get_assessment_by_id", lambda assessment_id: assessment(max_attempts=0))
     monkeypatch.setattr(views, "get_resources_by_assessment", lambda assessment_id: [])
+    monkeypatch.setattr(views, "get_rubric_by_assessment", AssessmentRubric)
 
     response = teacher_client.get("/teacher/assessments/7")
 

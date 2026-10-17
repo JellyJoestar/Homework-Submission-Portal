@@ -538,6 +538,28 @@ def publish_assessment_with_rubric(assessment_id):
         )
 
 
+def get_published_rubric_by_assessment(assessment_id):
+    """A single read excludes unpublished rubric definitions."""
+    connection = get_db_connection()
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT a.assessment_id, c.criterion_id, c.title, c.description, c.weight "
+            "FROM assessments a LEFT JOIN rubric_criteria c ON c.assessment_id = a.assessment_id "
+            "WHERE a.assessment_id = %s AND a.status = 'Published' ORDER BY c.criterion_id",
+            (assessment_id,),
+        )
+        rows = cursor.fetchall()
+        if not rows:
+            return None
+        return AssessmentRubric(assessment_id, [row for row in rows if row["criterion_id"] is not None])
+    finally:
+        if cursor is not None:
+            cursor.close()
+        connection.close()
+
+
 class SubmissionNotFoundError(Exception):
     """The submission requested for grading no longer exists."""
 

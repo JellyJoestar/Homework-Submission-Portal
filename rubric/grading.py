@@ -12,6 +12,9 @@ class RubricGradingFacade:
         grades = self.repository.get_criterion_grades(submission["submission_id"]) if rubric.criteria else []
         return rubric, {grade["criterion_id"]: grade for grade in grades}
 
+    def published_rubric(self, assessment_id):
+        return self.repository.get_published_rubric_by_assessment(assessment_id)
+
     def save(self, submission_id, rows):
         with self.repository.grading_transaction(submission_id) as (cursor, submission, rubric):
             grading = SubmissionGrading(submission_id, rubric, rows)

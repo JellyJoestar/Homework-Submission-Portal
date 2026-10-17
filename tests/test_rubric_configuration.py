@@ -181,7 +181,64 @@ def test_non_draft_teacher_view_is_read_only(teacher_client, rubric_state, statu
 
     assert response.status_code == 200
     assert b"Analysis" in response.data and b"100.00%" in response.data
-    assert b"read-only" in response.data
+    assert b"Assessment Rubric" in response.data and b"Total weight:" in response.data
     assert b"rubric-criterion-form" not in response.data
     assert b"/rubric/1/edit" not in response.data
     assert b"/rubric/1/delete" not in response.data
+
+
+@pytest.mark.parametrize("method,suffix", [("get", "edit"), ("post", "edit"), ("post", "delete")])
+def test_unknown_or_foreign_criterion_returns_404_without_changing_other_rows(
+    teacher_client, rubric_state, method, suffix,
+):
+    rubric_state["create"](7, "Analysis", "Keep this", "100")
+    before = rubric_state["rows"].copy()
+
+    response = getattr(teacher_client, method)(
+        f"/teacher/assessments/7/rubric/99/{suffix}", data=form_data()
+    )
+
+    assert response.status_code == 404
+    assert rubric_state["rows"] == before
+
+
+def test_invalid_new_weight_returns_feedback_without_creating_a_record(teacher_client, rubric_state):
+    response = teacher_client.post("/teacher/assessments/7/rubric", data=form_data(weight="101"))
+
+    assert response.status_code == 400
+    assert b"Weight must be greater than 0 and at most 100." in response.data
+    assert rubric_state["rows"] == []
+
+
+def test_whitespace_fields_are_rejected_by_domain_validation(teacher_client, rubric_state):
+    response = teacher_client.post(
+        "/teacher/assessments/7/rubric", data=form_data(title="   ", description="   ")
+    )
+
+    assert response.status_code == 400
+    assert rubric_state["rows"] == []
+
+
+def test_rubric_content_is_escaped_in_the_teacher_view(teacher_client, rubric_state):
+    rubric_state["create"](7, "<script>title</script>", "<img src=x>", "100")
+
+    response = teacher_client.get("/teacher/assessments/7")
+
+    assert b"&lt;script&gt;title&lt;/script&gt;" in response.data
+    assert b"<script>title</script>" not in response.data
+
+
+def test_new_form_uses_the_existing_csrf_mechanism(teacher_client, rubric_state, app, monkeypatch):
+    import re
+    monkeypatch.setitem(app.config, "WTF_CSRF_ENABLED", True)
+
+    rejected = teacher_client.post("/teacher/assessments/7/rubric", data=form_data())
+    assert rejected.status_code == 400
+    assert b"CSRF token is missing" in rejected.data
+    assert rubric_state["rows"] == []
+
+    page = teacher_client.get("/teacher/assessments/7")
+    token = re.search(rb'name="csrf_token" type="hidden" value="([^"]+)"', page.data).group(1).decode()
+    accepted = teacher_client.post("/teacher/assessments/7/rubric", data={**form_data(), "csrf_token": token})
+    assert accepted.status_code == 302
+    assert len(rubric_state["rows"]) == 1

@@ -54,6 +54,7 @@ scripts:
 
       if (session) {
           pm.environment.set("teacher_session", session[1]);
+          pm.environment.set("teacher_csrf_token", pm.environment.get("csrf_token"));
           console.log("Logged-in teacher session saved to environment");
       } else {
           console.warn("No session cookie found in response!");

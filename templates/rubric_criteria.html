@@ -2,8 +2,7 @@
     <h2 id="rubric-heading">Assessment Rubric</h2>
     {% if rubric.criteria %}
         <div class="rubric-table-container">
-            <table class="rubric-table">
-                <caption>Criteria and percentage weights for this assessment</caption>
+            <table class="rubric-table{% if assessment.status == 'Draft' %} rubric-table-editable{% endif %}" aria-labelledby="rubric-heading">
                 <thead>
                     <tr>
                         <th scope="col">Title</th>
@@ -42,7 +41,5 @@
         <form class="assessment-form rubric-criterion-form" method="POST" action="{{ url_for('rubric.add_criterion', assessment_id=assessment.assessment_id) }}">
             {% with form = criterion_form %}{% include "rubric_criterion_fields.html" %}{% endwith %}
         </form>
-    {% else %}
-        <p>Rubric criteria are read-only because this assessment is no longer Draft.</p>
     {% endif %}
 </section>

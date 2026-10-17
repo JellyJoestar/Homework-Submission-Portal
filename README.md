@@ -241,6 +241,18 @@ Teachers can permanently delete an assessment only while it remains in the Draft
 
 ---
 
+### Draft Assessment Rubrics (FR-RUB-01)
+
+Teachers can add, edit and remove rubric criteria on Draft assessments. Each
+criterion requires a title, description and a weight greater than 0 and at most
+100, with at most two decimal places. Publication requires at least one criterion
+and a total weight of exactly 100%. The rubric becomes read-only after Draft.
+
+This story implements rubric definition and publication rules. Criterion grading
+and student rubric/result views are implemented in the following stories.
+See [the rubric implementation and deployment guide](docs/IFN636-113-rubric-criteria.md)
+for Composition, AC traceability, tests and the additive database migration.
+
 ## 6. File Upload Support
 
 Supporting resources and Student submissions support:
@@ -355,6 +367,14 @@ Homework-Submission-Portal/
 │   ├── __init__.py
 │   ├── factory.py
 │   └── routes.py
+│
+├── rubric/
+│   ├── __init__.py
+│   ├── models.py
+│   └── routes.py
+│
+├── docs/
+│   └── IFN636-113-rubric-criteria.md
 │
 ├── database/
 │   └── homework-portal.sql

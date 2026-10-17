@@ -532,10 +532,8 @@ input[type="file"]::file-selector-button {
     text-align: left;
 }
 
-.rubric-table caption {
-    padding-bottom: 10px;
-    color: var(--muted);
-    text-align: left;
+.rubric-table-editable {
+    min-width: 620px;
 }
 
 .rubric-table th,
@@ -548,6 +546,15 @@ input[type="file"]::file-selector-button {
 
 .rubric-table thead {
     background: var(--surface-soft);
+}
+
+.rubric-table th:first-child {
+    min-width: 110px;
+}
+
+.rubric-table th:nth-child(3),
+.rubric-table td:nth-child(3) {
+    white-space: nowrap;
 }
 
 .rubric-description {

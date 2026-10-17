@@ -1,0 +1,22 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_graded}}"
+order: 1000
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("The student sees the published criterion title, description and weight", function () {
+          pm.response.to.have.status(200);
+          const html = pm.response.text();
+          pm.expect(html).to.include('id="student-rubric-heading"');
+          pm.expect(html).to.include("Assessment criterion");
+          pm.expect(html).to.include("Evaluate the submitted assessment against its requirements.");
+          pm.expect(html).to.include("100.00%");
+          pm.expect(html).not.to.include("rubric-criterion-form");
+      });

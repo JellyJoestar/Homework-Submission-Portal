@@ -1,0 +1,4 @@
+$kind: collection
+name: Student rubric
+description: FR-RUB-03 uses the published assessment and completed grading prepared by Student / Attempt Limits and Rubric grading.
+order: 4800

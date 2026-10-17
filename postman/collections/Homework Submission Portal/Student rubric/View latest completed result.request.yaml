@@ -1,0 +1,23 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/student/submissions/{{ifn636_107_submission_id_graded}}"
+order: 2000
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("The student sees the latest saved mark, comment and weighted final result", function () {
+          pm.response.to.have.status(200);
+          const html = pm.response.text().replace(/\s+/g, " ");
+          pm.expect(html).to.include('id="student-result-heading"');
+          pm.expect(html).to.include("84.50");
+          pm.expect(html).to.include("100.00%");
+          pm.expect(html).to.include("Revised criterion comment");
+          pm.expect(html).to.include("Final grade:</strong> 84.50");
+          pm.expect(html).not.to.include("Initial criterion comment");
+      });

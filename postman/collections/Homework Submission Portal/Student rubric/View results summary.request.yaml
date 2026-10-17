@@ -1,0 +1,21 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/student/results"
+order: 3000
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("The results summary shows the current total and links to its breakdown", function () {
+          pm.response.to.have.status(200);
+          const html = pm.response.text().replace(/\s+/g, " ");
+          const id = pm.environment.get("ifn636_107_submission_id_graded");
+          pm.expect(html).to.include("<strong>84.50</strong>");
+          pm.expect(html).to.include('href="/student/submissions/' + id + '"');
+          pm.expect(html).to.include("View Rubric Results");
+      });

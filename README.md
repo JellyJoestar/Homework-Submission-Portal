@@ -498,6 +498,27 @@ The account details must match the values stored in the private `.env` file.
 
 The application should not use the MySQL root account for normal runtime database access.
 
+### Database Schema Management During Assessment 2 Deployment
+
+The Assessment 2 application is deployed to two AWS EC2 application servers behind an Application Load Balancer (ALB). Both application servers connect to the same MySQL 8.4 database hosted on a separate data server.
+
+The GitHub Actions CD workflow automates application source deployment, Python dependency installation, and application activation. **Database schema migration is not currently automated.**
+
+If an application update requires changes to the database schema, the following procedure must be followed:
+
+1. Coordinate the required schema changes with the team member responsible for the MySQL data server.
+2. Review the SQL changes and confirm their compatibility with the existing application and data.
+3. Create a database backup before applying changes.
+4. Apply approved schema changes using appropriate SQL migration statements, such as `ALTER TABLE`, without unnecessarily deleting existing data.
+5. Verify the updated database schema and application functionality before completing deployment.
+6. Document the changes and retain an appropriate recovery procedure.
+
+**Important:** The `database/homework-portal.sql` file is intended for database initialization. It drops and recreates the database and must not be rerun against an existing database containing data that must be preserved.
+
+**Deployment limitation:** The current CD workflow does not automatically apply or roll back MySQL schema changes. Application source rollback does not restore a previous database schema. Database recovery must be managed separately in coordination with the database administrator.
+
+This approach keeps database modifications controlled while allowing the application deployment process to remain automated.
+
 ---
 
 ## 13. Running the Application Locally

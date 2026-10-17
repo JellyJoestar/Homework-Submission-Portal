@@ -1,7 +1,9 @@
 import os
+from contextlib import contextmanager
 import mysql.connector
 from dotenv import load_dotenv
 from models import User
+from rubric.models import AssessmentRubric
 
 load_dotenv()
 
@@ -414,6 +416,111 @@ def save_submission_attempt(
             connection.close()
         except Exception:
             pass
+
+def get_rubric_by_assessment(assessment_id):
+    connection = get_db_connection()
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT criterion_id, assessment_id, title, description, weight
+            FROM rubric_criteria
+            WHERE assessment_id = %s
+            ORDER BY criterion_id
+            """,
+            (assessment_id,),
+        )
+        return AssessmentRubric(assessment_id, cursor.fetchall())
+    finally:
+        if cursor is not None:
+            cursor.close()
+        connection.close()
+
+
+@contextmanager
+def _rubric_transaction(assessment_id):
+    """Use the assessment row as the shared lock for rubric writes/publication."""
+    connection = get_db_connection()
+    cursor = None
+    try:
+        connection.start_transaction()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT assessment_id, status FROM assessments
+            WHERE assessment_id = %s FOR UPDATE
+            """,
+            (assessment_id,),
+        )
+        assessment = cursor.fetchone()
+        if assessment is None:
+            raise AssessmentNotFoundError
+        cursor.execute(
+            """
+            SELECT criterion_id, assessment_id, title, description, weight
+            FROM rubric_criteria
+            WHERE assessment_id = %s
+            ORDER BY criterion_id
+            """,
+            (assessment_id,),
+        )
+        rubric = AssessmentRubric(assessment_id, cursor.fetchall())
+        yield cursor, assessment, rubric
+        connection.commit()
+    except Exception:
+        try:
+            connection.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+        finally:
+            connection.close()
+
+
+def create_rubric_criterion(assessment_id, title, description, weight):
+    with _rubric_transaction(assessment_id) as (cursor, assessment, rubric):
+        criterion = rubric.add_criterion(title, description, weight)
+        cursor.execute(
+            """
+            INSERT INTO rubric_criteria (assessment_id, title, description, weight)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (assessment_id, criterion.title, criterion.description, criterion.weight),
+        )
+        return cursor.lastrowid
+
+
+def update_rubric_criterion(assessment_id, criterion_id, title, description, weight):
+    with _rubric_transaction(assessment_id) as (cursor, assessment, rubric):
+        criterion = rubric.update_criterion(criterion_id, title, description, weight)
+        cursor.execute(
+            """
+            UPDATE rubric_criteria SET title = %s, description = %s, weight = %s
+            WHERE criterion_id = %s AND assessment_id = %s
+            """,
+            (
+                criterion.title, criterion.description, criterion.weight,
+                criterion_id, assessment_id,
+            ),
+        )
+
+
+def delete_rubric_criterion(assessment_id, criterion_id):
+    with _rubric_transaction(assessment_id) as (cursor, assessment, rubric):
+        rubric.remove_criterion(criterion_id)
+        cursor.execute(
+            """
+            DELETE FROM rubric_criteria
+            WHERE criterion_id = %s AND assessment_id = %s
+            """,
+            (criterion_id, assessment_id),
+        )
+
 
 def get_submissions_by_student(student_id):
     connection = get_db_connection()

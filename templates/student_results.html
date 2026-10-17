@@ -17,7 +17,7 @@
                             <p class="result-submitted">Submitted {{ result.submitted_at }}</p>
                         </div>
 
-                        {% if result.mark is not none %}
+                        {% if result.get('mark') is not none %}
                             <span class="assessment-status status-marked">Marked</span>
                         {% else %}
                             <span class="assessment-status status-pending">Pending</span>
@@ -27,7 +27,7 @@
                     <div class="result-content">
                         <div class="result-field result-mark">
                             <span class="result-label">Mark</span>
-                            {% if result.mark is not none %}
+                            {% if result.get('mark') is not none %}
                                 <strong>{{ result.mark }}</strong>
                             {% else %}
                                 <strong>Pending</strong>

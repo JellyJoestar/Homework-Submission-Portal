@@ -560,6 +560,52 @@ def get_published_rubric_by_assessment(assessment_id):
         connection.close()
 
 
+def get_student_grading_snapshots(student_id, submission_id=None):
+    """Read each result and all its criteria from the same SQL snapshot.
+
+    The optional ID limits the detail page; omitting it loads the student's
+    results in one query rather than querying once per submission.
+    """
+    connection = get_db_connection()
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        detail_filter = " AND s.submission_id = %s" if submission_id is not None else ""
+        params = (student_id, submission_id) if submission_id is not None else (student_id,)
+        cursor.execute(
+            "SELECT s.submission_id, s.assessment_id, s.mark AS final_grade, s.feedback, "
+            "a.status AS assessment_status, c.criterion_id, c.title, c.description, c.weight, "
+            "g.mark AS awarded_mark, g.comment, "
+            "(SELECT COUNT(*) FROM criterion_grades total WHERE total.submission_id = s.submission_id) AS grade_count "
+            "FROM submissions s JOIN assessments a ON a.assessment_id = s.assessment_id "
+            "LEFT JOIN rubric_criteria c ON c.assessment_id = s.assessment_id "
+            "LEFT JOIN criterion_grades g ON g.submission_id = s.submission_id AND g.criterion_id = c.criterion_id "
+            "WHERE s.student_id = %s" + detail_filter + " ORDER BY s.submission_id, c.criterion_id",
+            params,
+        )
+        snapshots = {}
+        for row in cursor.fetchall():
+            snapshot = snapshots.setdefault(row["submission_id"], {
+                "submission_id": row["submission_id"], "assessment_id": row["assessment_id"],
+                "assessment_status": row["assessment_status"], "mark": row["final_grade"],
+                "feedback": row["feedback"], "grade_count": row["grade_count"],
+                "criteria": [], "grades": [],
+            })
+            if row["criterion_id"] is not None:
+                snapshot["criteria"].append({
+                    "criterion_id": row["criterion_id"], "assessment_id": row["assessment_id"],
+                    "title": row["title"], "description": row["description"], "weight": row["weight"],
+                })
+                snapshot["grades"].append({
+                    "criterion_id": row["criterion_id"], "mark": row["awarded_mark"], "comment": row["comment"],
+                })
+        return snapshots
+    finally:
+        if cursor is not None:
+            cursor.close()
+        connection.close()
+
+
 class SubmissionNotFoundError(Exception):
     """The submission requested for grading no longer exists."""
 

@@ -147,3 +147,41 @@ def test_ac6_complete_rubric_allows_publication(teacher_client, rubric_state):
 
     assert response.status_code == 302
     assert rubric_state["assessment"]["status"] == "Published"
+
+
+@pytest.mark.parametrize("status", ["Published", "Closed", "Archived"])
+@pytest.mark.parametrize("method,path", [
+    ("post", "/teacher/assessments/7/rubric"),
+    ("post", "/teacher/assessments/7/rubric/1/edit"),
+    ("post", "/teacher/assessments/7/rubric/1/delete"),
+    ("get", "/teacher/assessments/7/rubric/1/edit"),
+])
+def test_ac7_non_draft_rubric_requests_are_rejected_before_mutation(
+    teacher_client, rubric_state, monkeypatch, status, method, path,
+):
+    rubric_state["create"](7, "Analysis", "Original description", "100")
+    before = rubric_state["rows"].copy()
+    rubric_state["assessment"]["status"] = status
+    for name in ("create_rubric_criterion", "update_rubric_criterion", "delete_rubric_criterion"):
+        monkeypatch.setattr(routes, name, lambda *args: pytest.fail("locked rubric must not be modified"))
+
+    response = getattr(teacher_client, method)(path, data=form_data())
+
+    assert response.status_code == 400
+    assert b"only be changed while the assessment is Draft" in response.data
+    assert rubric_state["rows"] == before
+
+
+@pytest.mark.parametrize("status", ["Published", "Closed", "Archived"])
+def test_non_draft_teacher_view_is_read_only(teacher_client, rubric_state, status):
+    rubric_state["create"](7, "Analysis", "Original description", "100")
+    rubric_state["assessment"]["status"] = status
+
+    response = teacher_client.get("/teacher/assessments/7")
+
+    assert response.status_code == 200
+    assert b"Analysis" in response.data and b"100.00%" in response.data
+    assert b"read-only" in response.data
+    assert b"rubric-criterion-form" not in response.data
+    assert b"/rubric/1/edit" not in response.data
+    assert b"/rubric/1/delete" not in response.data

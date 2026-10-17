@@ -456,6 +456,8 @@ def _rubric_transaction(assessment_id):
         assessment = cursor.fetchone()
         if assessment is None:
             raise AssessmentNotFoundError
+        if assessment["status"] != "Draft":
+            raise RubricNotEditableError
         cursor.execute(
             """
             SELECT criterion_id, assessment_id, title, description, weight
@@ -524,8 +526,6 @@ def delete_rubric_criterion(assessment_id, criterion_id):
 
 def publish_assessment_with_rubric(assessment_id):
     with _rubric_transaction(assessment_id) as (cursor, assessment, rubric):
-        if assessment["status"] != "Draft":
-            raise RubricNotEditableError
         rubric.validate_for_publication()
         cursor.execute(
             """

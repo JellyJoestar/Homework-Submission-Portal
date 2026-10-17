@@ -1,5 +1,5 @@
 """Teacher rubric forms; domain and database functions enforce the save rules."""
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 
 from db import (
     AssessmentNotFoundError,
@@ -21,6 +21,15 @@ from views import render_teacher_assessment
 rubric = Blueprint("rubric", __name__)
 
 
+def _draft_assessment(assessment_id):
+    assessment = get_assessment_by_id(assessment_id)
+    if assessment is None:
+        abort(404, description="Assessment not found!")
+    if assessment["status"] != "Draft":
+        abort(400, description="Rubric criteria can only be changed while the assessment is Draft.")
+    return assessment
+
+
 def _add_validation_errors(form, error):
     for name, message in error.errors.items():
         field = getattr(form, name, None)
@@ -31,9 +40,7 @@ def _add_validation_errors(form, error):
 @rubric.route("/teacher/assessments/<int:assessment_id>/rubric", methods=["POST"])
 @teacher_required
 def add_criterion(assessment_id):
-    assessment = get_assessment_by_id(assessment_id)
-    if assessment is None:
-        return "Assessment not found!", 404
+    assessment = _draft_assessment(assessment_id)
     form = RubricCriterionForm()
     if form.validate_on_submit():
         try:
@@ -57,9 +64,7 @@ def add_criterion(assessment_id):
 )
 @teacher_required
 def edit_criterion(assessment_id, criterion_id):
-    assessment = get_assessment_by_id(assessment_id)
-    if assessment is None:
-        return "Assessment not found!", 404
+    assessment = _draft_assessment(assessment_id)
     try:
         criterion = get_rubric_by_assessment(assessment_id).get_criterion(criterion_id)
     except RubricCriterionNotFoundError:
@@ -92,6 +97,7 @@ def edit_criterion(assessment_id, criterion_id):
 )
 @teacher_required
 def remove_criterion(assessment_id, criterion_id):
+    _draft_assessment(assessment_id)
     if not RubricActionForm().validate_on_submit():
         return "Invalid rubric action. Please reload the assessment and try again.", 400
     try:

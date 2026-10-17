@@ -156,6 +156,7 @@ def student_assessment_details(assessment_id):
     return render_template(
         "student_assessment_details.html",
         assessment=assessment,
+        rubric=grading_facade.published_rubric(assessment_id),
         resources=resources,
         submission=submission,
         attempt_count=attempt_count,

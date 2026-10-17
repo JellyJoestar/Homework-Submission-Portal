@@ -18,6 +18,25 @@ Criterion grading and student rubric/result views belong to the following storie
 - The branch starts from local `main` at `bc5d43f`; remote fetch was not performed.
   No source was pushed and no production deployment/migration was performed.
 
+### PR integration follow-up: late-allowed assessment
+
+The late-allowed submission scenario from IFN636-73 publishes a separate
+assessment. It also needs a valid rubric before publication. The Postman request
+`Teacher / Prepare late allowed assessment rubric` adds a 100% criterion at
+order 7450, after finding that assessment (7400) and before publishing it (7500).
+The assessment ID, teacher session and teacher CSRF token are reused from the
+existing setup. Application validation and submission behavior are unchanged.
+
+Local follow-up verification: 179 Pytest cases passed, with 5 opt-in MySQL cases
+skipped. A temporary check used the new request's URL/form fields with actual
+Flask routes, CSRF enabled and in-memory persistence: publication without a
+rubric returned 400, rubric setup and publication returned 302, and an allowed
+late student submission followed its redirect to a 200 confirmation page.
+Request ordering was checked against the locally cached IFN636-73 requests.
+The full merged Postman collection and its late-status badge assertion still
+require CI verification; neither Postman CLI nor a running MySQL environment
+was available locally.
+
 ## Database update (IFN636-114)
 
 Each row in `rubric_criteria` belongs to one assessment and contains a title,

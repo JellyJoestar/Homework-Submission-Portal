@@ -1,0 +1,23 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}/rubric-grading"
+order: 2100
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    criterion_id: "{{ifn636_107_grading_criterion_id}}"
+    "mark_{{ifn636_107_grading_criterion_id}}": "84.50"
+    "comment_{{ifn636_107_grading_criterion_id}}": Revised criterion comment
+    csrf_token: "{{teacher_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("The criterion comment is updated with marks retained", function () {
+          pm.response.to.have.status(302);
+      });

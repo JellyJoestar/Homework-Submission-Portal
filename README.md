@@ -248,10 +248,24 @@ criterion requires a title, description and a weight greater than 0 and at most
 100, with at most two decimal places. Publication requires at least one criterion
 and a total weight of exactly 100%. The rubric becomes read-only after Draft.
 
-This story implements rubric definition and publication rules. Criterion grading
-and student rubric/result views are implemented in the following stories.
+This story implements rubric definition and publication rules. Student
+rubric/criterion-result views belong to the following Story.
 See [the rubric implementation and deployment guide](docs/IFN636-113-rubric-criteria.md)
 for Composition, AC traceability, tests and the additive database migration.
+
+### Submission Rubric Grading (FR-RUB-02)
+
+Teachers can save complete criterion marks and optional comments from the
+existing submission review page. Every mark must be within 0–100 with at most
+two decimal places. The system calculates the weighted result, rounds it once
+to two decimal places, and stores all grades and the result atomically. Updates
+recalculate the total; changing only comments preserves it. Historical
+assessments without a rubric retain the manual grading form.
+
+See [the grading implementation and deployment guide](docs/IFN636-121-rubric-grading.md)
+for the Facade/Composition design, API, AC mapping, tests and required
+`IFN636-122_add_criterion_grades.sql` migration. Database migrations must be
+applied before the new application release is activated.
 
 ## 6. File Upload Support
 
@@ -371,10 +385,14 @@ Homework-Submission-Portal/
 ├── rubric/
 │   ├── __init__.py
 │   ├── models.py
+│   ├── grading_models.py
+│   ├── grading.py
+│   ├── grading_routes.py
 │   └── routes.py
 │
 ├── docs/
-│   └── IFN636-113-rubric-criteria.md
+│   ├── IFN636-113-rubric-criteria.md
+│   └── IFN636-121-rubric-grading.md
 │
 ├── database/
 │   └── homework-portal.sql
@@ -1351,7 +1369,7 @@ Current limitations include:
 - Only PDF and DOCX files are supported.
 - DOCX previews show the document content (text, headings, lists, tables and images) but not its exact page layout, such as headers, footers or page breaks.
 - The application uses a simple Student submission model rather than multiple submission versions or submission history.
-- Assessment criteria are simple and do not provide a weighted or nested rubric engine.
+- Rubrics support flat weighted criteria; nested rubric structures are outside scope.
 - Virus or malware scanning is not implemented.
 - Email and push notifications are not implemented.
 - Plagiarism detection is not implemented.

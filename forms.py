@@ -17,4 +17,4 @@ class RubricCriterionForm(FlaskForm):
 
 
 class RubricActionForm(FlaskForm):
-    """CSRF protection for rubric delete actions."""
+    """CSRF protection for rubric configuration and grading actions."""

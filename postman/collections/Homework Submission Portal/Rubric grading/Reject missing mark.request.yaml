@@ -1,0 +1,22 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}/rubric-grading"
+order: 1100
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    criterion_id: "{{ifn636_107_grading_criterion_id}}"
+    csrf_token: "{{teacher_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A missing mark is rejected without completing a partial save", function () {
+          pm.response.to.have.status(400);
+          pm.expect(pm.response.text()).to.include("A mark is required for every criterion.");
+      });

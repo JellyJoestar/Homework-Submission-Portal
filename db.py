@@ -593,7 +593,7 @@ def grading_transaction(submission_id):
             raise SubmissionNotFoundError
         cursor.execute(
             "SELECT criterion_id, assessment_id, title, description, weight "
-            "FROM rubric_criteria WHERE assessment_id = %s ORDER BY criterion_id",
+            "FROM rubric_criteria WHERE assessment_id = %s ORDER BY criterion_id FOR UPDATE",
             (assessment_id,),
         )
         rubric = AssessmentRubric(assessment_id, cursor.fetchall())

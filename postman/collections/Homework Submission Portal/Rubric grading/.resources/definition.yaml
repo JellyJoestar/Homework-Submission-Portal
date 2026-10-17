@@ -1,0 +1,4 @@
+$kind: collection
+name: Rubric grading
+description: FR-RUB-02 updates and invalid saves use the complete zero-grade fixture from Student / Attempt Limits.
+order: 4700

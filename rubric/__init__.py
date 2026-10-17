@@ -1,1 +1,1 @@
-"""Assessment rubric definition and, in later stories, rubric grading."""
+"""Assessment rubric definition and complete submission grading."""

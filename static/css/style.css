@@ -565,6 +565,33 @@ input[type="file"]::file-selector-button {
     margin-top: 16px;
 }
 
+.rubric-grading {
+    max-width: 800px;
+}
+
+.rubric-grading-criterion {
+    margin: 20px 0;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    min-width: 0;
+}
+
+.rubric-grading-criterion legend {
+    font-weight: 700;
+    padding: 0 6px;
+}
+
+.rubric-grading-criterion input[type="number"],
+.rubric-grading-criterion textarea {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.rubric-final-grade {
+    margin: 20px 0;
+}
+
 .file-preview-frame {
     display: block;
     width: 100%;

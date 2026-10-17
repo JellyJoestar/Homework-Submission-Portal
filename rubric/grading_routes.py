@@ -1,13 +1,22 @@
 """Complete rubric grading writes for the existing submission review flow."""
 from flask import Blueprint, jsonify, redirect, request, url_for
-from db import SubmissionNotFoundError
+from db import SubmissionNotFoundError, get_submission_for_teacher
 from decorators import teacher_required
 from forms import RubricActionForm
-from rubric.grading import RubricGradingFacade
+from rubric.grading import grading_facade
 from rubric.models import RubricValidationError
+from views import render_teacher_submission
 
 grading = Blueprint("grading", __name__)
-grading_facade = RubricGradingFacade()
+
+
+def invalid_grading(submission_id, errors):
+    if request.is_json:
+        return jsonify(errors=errors), 400
+    submission = get_submission_for_teacher(submission_id)
+    if submission is None:
+        return "Submission not found.", 404
+    return render_teacher_submission(submission, errors, request.form.to_dict()), 400
 
 
 def requested_grades():
@@ -28,13 +37,13 @@ def requested_grades():
 def save_grading(submission_id):
     form = RubricActionForm(data={"csrf_token": request.headers.get("X-CSRFToken")}) if request.is_json else RubricActionForm()
     if not form.validate_on_submit():
-        return jsonify(errors={"csrf_token": "Invalid grading action. Reload the page and try again."}), 400
+        return invalid_grading(submission_id, {"csrf_token": "Invalid grading action. Reload the page and try again."})
     try:
         result = grading_facade.save(submission_id, requested_grades())
     except SubmissionNotFoundError:
         return "Submission not found.", 404
     except RubricValidationError as error:
-        return jsonify(errors=error.errors), 400
+        return invalid_grading(submission_id, error.errors)
     if request.is_json:
         return jsonify(submission_id=submission_id, final_grade=f"{result.final_grade:.2f}")
     return redirect(url_for("views.teacher_submission_details", submission_id=submission_id))

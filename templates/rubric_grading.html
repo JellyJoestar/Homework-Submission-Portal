@@ -1,0 +1,37 @@
+<section class="rubric-grading" aria-labelledby="rubric-grading-heading">
+    <h2 id="rubric-grading-heading">Rubric Grading</h2>
+    {% if grading_errors %}
+        <div class="form-error" role="alert">
+            <ul>{% for message in grading_errors.values() %}<li>{{ message }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('grading.save_grading', submission_id=submission.submission_id) }}">
+        {{ grading_form.hidden_tag() }}
+        {% for criterion in rubric.criteria %}
+            <fieldset class="rubric-grading-criterion" data-grading-criterion-id="{{ criterion.criterion_id }}">
+                <legend>{{ criterion.title }} ({{ "%.2f" | format(criterion.weight) }}%)</legend>
+                <p class="rubric-description">{{ criterion.description }}</p>
+                <input type="hidden" name="criterion_id" value="{{ criterion.criterion_id }}">
+                {% set mark_key = 'mark_' ~ criterion.criterion_id %}
+                {% set comment_key = 'comment_' ~ criterion.criterion_id %}
+                <div class="form-field">
+                    <label for="{{ mark_key }}">Mark (0–100)</label>
+                    <input type="number" id="{{ mark_key }}" name="{{ mark_key }}" min="0" max="100" step="0.01" required
+                        value="{{ grading_values.get(mark_key, '') }}"
+                        {% if mark_key in grading_errors %}aria-invalid="true" aria-describedby="{{ mark_key }}_error"{% endif %}>
+                    {% if mark_key in grading_errors %}<p class="form-error" id="{{ mark_key }}_error">{{ grading_errors[mark_key] }}</p>{% endif %}
+                </div>
+                <div class="form-field">
+                    <label for="{{ comment_key }}">Comment (optional)</label>
+                    <textarea id="{{ comment_key }}" name="{{ comment_key }}" rows="3"
+                        {% if comment_key in grading_errors %}aria-invalid="true" aria-describedby="{{ comment_key }}_error"{% endif %}>{{ grading_values.get(comment_key, '') }}</textarea>
+                    {% if comment_key in grading_errors %}<p class="form-error" id="{{ comment_key }}_error">{{ grading_errors[comment_key] }}</p>{% endif %}
+                </div>
+            </fieldset>
+        {% endfor %}
+        <p class="rubric-final-grade"><strong>Final grade:</strong>
+            {% if submission.mark is not none %}{{ "%.2f" | format(submission.mark) }}{% else %}Pending{% endif %}
+        </p>
+        <button type="submit">Save Rubric Grading</button>
+    </form>
+</section>

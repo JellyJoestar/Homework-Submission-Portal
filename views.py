@@ -48,6 +48,7 @@ from policies import get_submission_policy, SubmissionContext
 from forms import RubricActionForm, RubricCriterionForm
 from rubric.models import RubricNotEditableError, RubricValidationError
 from submission_checks import build_submission_check_chain
+from rubric.grading import grading_facade
 
 views = Blueprint("views", __name__)
 RESOURCE_UPLOAD_FOLDER = os.path.join(
@@ -323,7 +324,21 @@ def teacher_submission_details(submission_id):
     submission = get_submission_for_teacher(submission_id)
     if not submission:
         return "Submission not found.", 404
-    return render_template("teacher_submission_details.html", submission=submission)
+    return render_teacher_submission(submission)
+
+
+def render_teacher_submission(submission, grading_errors=None, grading_values=None):
+    rubric, grades = grading_facade.review(submission)
+    if grading_values is None:
+        grading_values = {}
+        for criterion_id, grade in grades.items():
+            grading_values[f"mark_{criterion_id}"] = f"{grade['mark']:.2f}"
+            grading_values[f"comment_{criterion_id}"] = grade["comment"] or ""
+    return render_template(
+        "teacher_submission_details.html", submission=submission, rubric=rubric,
+        grading_values=grading_values, grading_errors=grading_errors or {},
+        grading_form=RubricActionForm(),
+    )
 
 @views.route("/teacher/submissions/<int:submission_id>/mark-feedback",methods=["POST"])
 @teacher_required

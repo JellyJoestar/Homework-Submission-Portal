@@ -1,6 +1,6 @@
 """A submission owns the grades awarded against its assessment rubric."""
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from rubric.models import RubricValidationError
 
 
@@ -76,3 +76,9 @@ class SubmissionGrading:
         if errors:
             raise RubricValidationError(errors)
         self.grades = tuple(grades)
+
+    @property
+    def final_grade(self):
+        weights = {criterion.criterion_id: criterion.weight for criterion in self.rubric.criteria}
+        total = sum((grade.mark * weights[grade.criterion_id] / Decimal("100") for grade in self.grades), Decimal("0"))
+        return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

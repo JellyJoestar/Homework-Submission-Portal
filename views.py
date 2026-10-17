@@ -32,6 +32,7 @@ from db import (
     AttemptLimitReachedError,
     SubmissionAlreadyGradedError,
     SubmissionCommitOutcomeUnknownError,
+    SubmissionNotFoundError,
     get_submissions_by_student,
     get_submission_by_id,
     get_submission_by_assessment_and_student,
@@ -340,7 +341,12 @@ def teacher_save_mark_feedback(submission_id):
         mark = Decimal(mark_text)
     except InvalidOperation:
         return "Mark must be a valid number.", 400
-    update_submission_mark_feedback(submission_id, mark, feedback)
+    try:
+        update_submission_mark_feedback(submission_id, mark, feedback)
+    except RubricValidationError as error:
+        return str(error), 400
+    except SubmissionNotFoundError:
+        return "Submission not found.", 404
     return redirect(url_for("views.teacher_submission_details",submission_id=submission_id))
 
 @views.route("/teacher/submissions/<int:submission_id>/download")

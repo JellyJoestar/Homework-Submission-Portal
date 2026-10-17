@@ -30,11 +30,11 @@ def save_grading(submission_id):
     if not form.validate_on_submit():
         return jsonify(errors={"csrf_token": "Invalid grading action. Reload the page and try again."}), 400
     try:
-        grading_facade.save(submission_id, requested_grades())
+        result = grading_facade.save(submission_id, requested_grades())
     except SubmissionNotFoundError:
         return "Submission not found.", 404
     except RubricValidationError as error:
         return jsonify(errors=error.errors), 400
     if request.is_json:
-        return jsonify(submission_id=submission_id)
+        return jsonify(submission_id=submission_id, final_grade=f"{result.final_grade:.2f}")
     return redirect(url_for("views.teacher_submission_details", submission_id=submission_id))

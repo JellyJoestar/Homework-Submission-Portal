@@ -16,4 +16,5 @@ class RubricGradingFacade:
         with self.repository.grading_transaction(submission_id) as (cursor, submission, rubric):
             grading = SubmissionGrading(submission_id, rubric, rows)
             self.repository.store_criterion_grades(cursor, grading)
+            self.repository.store_rubric_result(cursor, grading)
         return grading

@@ -620,6 +620,13 @@ def store_criterion_grades(cursor, grading):
         )
 
 
+def store_rubric_result(cursor, grading):
+    cursor.execute(
+        "UPDATE submissions SET mark = %s WHERE submission_id = %s AND assessment_id = %s",
+        (grading.final_grade, grading.submission_id, grading.rubric.assessment_id),
+    )
+
+
 def get_submissions_by_student(student_id):
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
@@ -767,23 +774,16 @@ def get_submission_for_teacher(submission_id):
     return submission
 
 def update_submission_mark_feedback(submission_id, mark, feedback):
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-        UPDATE submissions
-        SET
-            mark = %s,
-            feedback = %s
-        WHERE submission_id = %s
-        """,
-        (mark, feedback, submission_id)
-    )
-    connection.commit()
-    updated_rows = cursor.rowcount
-    cursor.close()
-    connection.close()
-    return updated_rows
+    # Keep manual grading for historical assessments without rubric criteria.
+    # Recheck under locks so this endpoint cannot overwrite a calculated result.
+    with grading_transaction(submission_id) as (cursor, submission, rubric):
+        if rubric.criteria:
+            raise RubricValidationError({"grading": "Use complete rubric grading for this submission."})
+        cursor.execute(
+            "UPDATE submissions SET mark = %s, feedback = %s WHERE submission_id = %s",
+            (mark, feedback, submission_id),
+        )
+        return cursor.rowcount
 
 def get_submission_by_assessment_and_student(assessment_id, student_id):
     connection = get_db_connection()

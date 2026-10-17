@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import mysql.connector
 from dotenv import load_dotenv
 from models import User
-from rubric.models import AssessmentRubric, RubricNotEditableError
+from rubric.models import AssessmentRubric, RubricNotEditableError, RubricValidationError
 
 load_dotenv()
 

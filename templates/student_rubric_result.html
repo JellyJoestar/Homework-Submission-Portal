@@ -1,0 +1,30 @@
+{% if submission.get('rubric_result') %}
+<section class="rubric-panel" aria-labelledby="student-result-heading">
+    <h2 id="student-result-heading">Rubric Results</h2>
+    <div class="rubric-table-container" tabindex="0" role="region" aria-label="Rubric grading results">
+        <table class="rubric-table student-rubric-result-table" aria-labelledby="student-result-heading">
+            <thead>
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Weight</th>
+                    <th scope="col">Mark</th>
+                    <th scope="col">Comment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for criterion in submission.rubric_result.criteria %}
+                <tr>
+                    <th scope="row">{{ criterion.title }}</th>
+                    <td class="rubric-description">{{ criterion.description }}</td>
+                    <td>{{ "%.2f" | format(criterion.weight) }}%</td>
+                    <td>{{ "%.2f" | format(criterion.mark) }}</td>
+                    <td class="rubric-description">{{ criterion.comment }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="rubric-total"><strong>Final grade:</strong> {{ "%.2f" | format(submission.rubric_result.final_grade) }}</p>
+</section>
+{% endif %}

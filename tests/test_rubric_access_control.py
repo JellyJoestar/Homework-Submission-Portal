@@ -5,6 +5,8 @@ import re
 from copy import deepcopy
 from conftest import login_as
 from test_rubric_configuration import rubric_state
+from test_rubric_grading import grading_state, payload
+from rubric.grading import grading_facade
 
 
 PROTECTED_REQUESTS = [
@@ -111,3 +113,52 @@ def test_ac2_existing_session_uses_current_database_role_after_demotion(teacher_
     users[1].role = "Student"
     response = teacher_client.post("/teacher/assessments/7/rubric/1/delete")
     assert response.status_code == 403 and rubric_state["rows"] == before
+
+
+GRADING_REQUESTS = [
+    ("GET", "/teacher/submissions/9"),
+    ("GET", "/teacher/submissions/9/download"),
+    ("GET", "/teacher/submissions/9/preview"),
+    ("POST", "/teacher/submissions/9/rubric-grading"),
+    ("POST", "/teacher/submissions/9/mark-feedback"),
+]
+
+
+@pytest.mark.parametrize("method,path", GRADING_REQUESTS)
+def test_ac3_ac5_student_cannot_read_teacher_review_or_change_saved_grading(student_client, grading_state, method, path):
+    grading_facade.save(9, payload(comment="PRIVATE_TEACHER_COMMENT")["grades"])
+    before = deepcopy((grading_state["grades"], grading_state["submission"]))
+    response = student_client.open(path, method=method, json=payload("100", "100", "Unauthorized"))
+    assert response.status_code == 403
+    assert b"PRIVATE_TEACHER_COMMENT" not in response.data
+    assert (grading_state["grades"], grading_state["submission"]) == before
+
+
+@pytest.mark.parametrize("encoding", ["form", "json", "legacy"])
+def test_ac3_ac5_student_valid_csrf_cannot_override_marks_comments_or_result(app, grading_state, encoding):
+    grading_facade.save(9, payload(comment="Protected comment")["grades"])
+    before = deepcopy((grading_state["grades"], grading_state["submission"]))
+    client, token = authenticated_client_with_csrf(app, 2)
+    headers = {"X-Role": "Teacher", "X-User-ID": "1", "X-CSRFToken": token}
+    if encoding == "json":
+        response = client.post("/teacher/submissions/9/rubric-grading", json={
+            **payload("100", "100", "Unauthorized"), "role": "Teacher", "final_grade": "100",
+        }, headers=headers)
+    elif encoding == "form":
+        response = client.post("/teacher/submissions/9/rubric-grading", data={
+            "criterion_id": ["1", "2"], "mark_1": "100", "mark_2": "100", "comment_1": "Unauthorized",
+            "final_grade": "100", "role": "Teacher", "csrf_token": token,
+        }, headers=headers)
+    else:
+        response = client.post("/teacher/submissions/9/mark-feedback", data={
+            "mark": "100", "feedback": "Unauthorized", "csrf_token": token,
+        }, headers=headers)
+    assert response.status_code == 403
+    assert (grading_state["grades"], grading_state["submission"]) == before
+
+
+def test_ac3_unknown_submission_id_cannot_bypass_student_role_check(student_client, monkeypatch):
+    monkeypatch.setattr(db, "get_db_connection", lambda: pytest.fail("Student reached grading persistence"))
+    for submission_id in (9, 999):
+        response = student_client.post(f"/teacher/submissions/{submission_id}/rubric-grading", json=payload())
+        assert response.status_code == 403

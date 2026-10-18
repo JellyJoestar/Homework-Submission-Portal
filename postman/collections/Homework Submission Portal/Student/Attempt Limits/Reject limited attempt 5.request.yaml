@@ -1,0 +1,52 @@
+$kind: http-request
+description: Fifth valid PDF upload is rejected after the three-attempt limit is reached.
+method: POST
+url: "{{baseUrl}}/student/assessments/{{ifn636_107_assessment_id_limited}}/submit"
+order: 2650
+headers:
+  Cookie: session={{student_session}}
+  Content-Type: multipart/form-data; boundary=IFN636LimitAttempt5
+body:
+  type: text
+  content: |-
+    --IFN636LimitAttempt5
+    Content-Disposition: form-data; name="submission_file"; filename="ifn636-limit-attempt-5-rejected.pdf"
+    Content-Type: application/pdf
+
+    %PDF-1.4
+    1 0 obj
+    << /Type /Catalog /Pages 2 0 R >>
+    endobj
+    2 0 obj
+    << /Type /Pages /Kids [3 0 R] /Count 1 >>
+    endobj
+    3 0 obj
+    << /Type /Page /Parent 2 0 R /MediaBox [0 0 72 72] >>
+    endobj
+    xref
+    0 4
+    0000000000 65535 f
+    0000000009 00000 n
+    0000000058 00000 n
+    0000000115 00000 n
+    trailer
+    << /Size 4 /Root 1 0 R >>
+    startxref
+    184
+    %%EOF
+    --IFN636LimitAttempt5--
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Fifth limited submission is rejected", function () {
+          pm.response.to.have.status(403);
+          pm.expect(pm.response.text()).to.include("Maximum submission limit reached");
+      });
+
+      pm.test("Rejected upload does not redirect to another submission", function () {
+          pm.response.to.not.have.header("Location");
+      });

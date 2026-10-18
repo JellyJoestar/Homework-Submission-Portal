@@ -249,7 +249,7 @@ criterion requires a title, description and a weight greater than 0 and at most
 and a total weight of exactly 100%. The rubric becomes read-only after Draft.
 
 This story implements rubric definition and publication rules. Student
-rubric/criterion-result views belong to the following Story.
+rubric and criterion-result views are described under FR-RUB-03 below.
 See [the rubric implementation and deployment guide](docs/IFN636-113-rubric-criteria.md)
 for Composition, AC traceability, tests and the additive database migration.
 
@@ -266,6 +266,19 @@ See [the grading implementation and deployment guide](docs/IFN636-121-rubric-gra
 for the Facade/Composition design, API, AC mapping, tests and required
 `IFN636-122_add_criterion_grades.sql` migration. Database migrations must be
 applied before the new application release is activated.
+
+### Student Rubric and Results (FR-RUB-03)
+
+Students can view saved criterion titles, descriptions and weights on the
+published assessment details page. Their submission page displays criterion
+marks, optional comments and the final grade only once all grading is valid
+and complete. The backend withholds incomplete grading before rendering, and
+the Results summary uses the same visibility check. Reloading shows the latest
+stored marks, comments and weighted result.
+
+See [the student rubric implementation and deployment guide](docs/IFN636-128-student-rubric-results.md)
+for AC mapping, the existing Facade/Composition design and verification. There
+is no new migration; both preceding rubric migrations must already be applied.
 
 ## 6. File Upload Support
 
@@ -392,7 +405,8 @@ Homework-Submission-Portal/
 │
 ├── docs/
 │   ├── IFN636-113-rubric-criteria.md
-│   └── IFN636-121-rubric-grading.md
+│   ├── IFN636-121-rubric-grading.md
+│   └── IFN636-128-student-rubric-results.md
 │
 ├── database/
 │   └── homework-portal.sql

@@ -191,6 +191,7 @@ def test_teacher_details_display_unlimited(teacher_client, monkeypatch):
 
 
 def test_student_details_display_numeric_limit(student_client, monkeypatch):
+    monkeypatch.setattr(views.grading_facade, "published_rubric", lambda assessment_id: None)
     monkeypatch.setattr(
         views,
         "get_assessment_by_id",

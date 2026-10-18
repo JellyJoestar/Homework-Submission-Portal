@@ -76,6 +76,7 @@ def test_submission_blocked_after_due_date(student_client, monkeypatch):
 
 
 def test_blocked_message_after_due_date(student_client, monkeypatch):
+    monkeypatch.setattr(views.grading_facade, "published_rubric", lambda assessment_id: None)
     fake_assessment = {"assessment_id": 2,
                        "title": "Overdue Assessment",
                        "description": "description",

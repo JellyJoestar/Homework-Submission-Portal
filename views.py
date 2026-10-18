@@ -156,8 +156,9 @@ def student_assessment_details(assessment_id):
     return render_template(
         "student_assessment_details.html",
         assessment=assessment,
+        rubric=grading_facade.published_rubric(assessment_id),
         resources=resources,
-        submission=submission,
+        submission=grading_facade.submission_metadata(submission) if submission else None,
         attempt_count=attempt_count,
         remaining_attempts=remaining_attempts,
         unlimited_attempts=unlimited_attempts,
@@ -251,14 +252,15 @@ def student_submit_assessment(assessment_id):
 @student_required
 def student_submissions():
     student_id = current_user.id
-    submissions = get_submissions_by_student(student_id)
+    submissions = [grading_facade.submission_metadata(submission)
+                   for submission in get_submissions_by_student(student_id)]
     return render_template("student_submissions.html",submissions=submissions)
 
 @views.route("/student/results")
 @student_required
 def student_results():
     student_id = current_user.id
-    results = get_submissions_by_student(student_id)
+    results = grading_facade.student_results(get_submissions_by_student(student_id), student_id)
     return render_template("student_results.html", results=results)
 
 @views.route("/student/submissions/<int:submission_id>")
@@ -268,7 +270,10 @@ def student_submission_details(submission_id):
     submission = get_submission_by_id(submission_id, student_id)
     if not submission:
         return "Submission not found.", 404
-    return render_template("student_submission_details.html",submission=submission)
+    return render_template(
+        "student_submission_details.html",
+        submission=grading_facade.student_submission(submission, student_id),
+    )
 
 @views.route("/student/assessments/<int:assessment_id>/resources/" "<int:resource_id>/download")
 @student_required

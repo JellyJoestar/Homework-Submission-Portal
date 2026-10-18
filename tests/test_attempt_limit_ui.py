@@ -4,6 +4,13 @@ import re
 import pytest
 
 import views
+import db
+
+
+@pytest.fixture(autouse=True)
+def unrelated_rubric_reads(monkeypatch):
+    monkeypatch.setattr(db, "get_published_rubric_by_assessment", lambda assessment_id: None)
+    monkeypatch.setattr(db, "get_student_grading_snapshots", lambda *args: {})
 
 
 ASSESSMENT_ID = 7

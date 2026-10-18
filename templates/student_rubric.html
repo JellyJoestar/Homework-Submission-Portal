@@ -1,0 +1,25 @@
+{% if rubric and rubric.criteria %}
+<section class="rubric-panel" aria-labelledby="student-rubric-heading">
+    <h2 id="student-rubric-heading">Assessment Rubric</h2>
+    <div class="rubric-table-container">
+        <table class="rubric-table" aria-labelledby="student-rubric-heading">
+            <thead>
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Weight</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for criterion in rubric.criteria %}
+                <tr>
+                    <th scope="row">{{ criterion.title }}</th>
+                    <td class="rubric-description">{{ criterion.description }}</td>
+                    <td>{{ "%.2f" | format(criterion.weight) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}

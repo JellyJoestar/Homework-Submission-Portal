@@ -1,0 +1,21 @@
+$kind: http-request
+description: FR-RUB-03 checks that the ungraded submission does not return criterion grading or a final result.
+method: GET
+url: "{{baseUrl}}/student/submissions/{{ifn636_107_submission_id_graded}}"
+order: 4150
+headers:
+  Cookie: session={{student_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("The pending submission does not disclose rubric grading", function () {
+          pm.response.to.have.status(200);
+          const html = pm.response.text();
+          pm.expect(html).not.to.include('id="student-result-heading"');
+          pm.expect(html).not.to.include("Final grade:</strong>");
+          pm.expect(html).not.to.include("IFN636-107 zero-grade feedback");
+      });

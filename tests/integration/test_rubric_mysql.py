@@ -278,3 +278,52 @@ def test_mysql_completed_zero_grading_blocks_concurrent_resubmission(mysql_gradi
     with pytest.raises(RubricValidationError):
         db.update_submission_mark_feedback(submission_id, Decimal("100"), "Bypass")
     assert db.get_submission_for_teacher(submission_id)["mark"] == Decimal("0.00")
+
+
+def test_mysql_student_published_rubric_and_latest_complete_result(student_client, mysql_grading_submission):
+    submission_id, assessment_id, student_id, criteria = mysql_grading_submission
+    rubric = db.get_published_rubric_by_assessment(assessment_id)
+    assert {criterion.criterion_id for criterion in rubric.criteria} == set(criteria)
+    published = student_client.get(f"/student/assessments/{assessment_id}")
+    assert published.status_code == 200 and b"Assessment Rubric" in published.data
+    assert b"40.00%" in published.data and b"60.00%" in published.data
+    detail_path = f"/student/submissions/{submission_id}"
+    assert b"student-result-heading" not in student_client.get(detail_path).data
+    grading_facade.save(submission_id, mysql_grade_rows(criteria, comment="Complete criterion feedback"))
+    complete = student_client.get(detail_path)
+    assert complete.status_code == 200 and b"86.00" in complete.data
+    assert b"Complete criterion feedback" in complete.data
+    grading_facade.save(submission_id, mysql_grade_rows(criteria, first="50", comment="Updated criterion feedback"))
+    revised = student_client.get(detail_path)
+    assert b"74.00" in revised.data and b"Updated criterion feedback" in revised.data
+    assert b"Complete criterion feedback" not in revised.data
+    grading_facade.save(submission_id, mysql_grade_rows(criteria, first="50", comment="Comment-only revision"))
+    assert b"Comment-only revision" in student_client.get(detail_path).data
+    assert db.get_student_grading_snapshots(student_id, submission_id)[submission_id]["mark"] == Decimal("74.00")
+
+
+def test_mysql_partial_grading_is_not_sent_to_students(student_client, mysql_grading_submission):
+    submission_id, _, _, criteria = mysql_grading_submission
+    grading_facade.save(submission_id, mysql_grade_rows(criteria, comment="UNRELEASED_CRITERION_COMMENT"))
+    connection = db.get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM criterion_grades WHERE submission_id = %s AND criterion_id = %s", (submission_id, criteria[1]))
+        connection.commit()
+    finally:
+        cursor.close()
+        connection.close()
+    page = student_client.get(f"/student/submissions/{submission_id}")
+    assert page.status_code == 200 and b"student-result-heading" not in page.data
+    assert b"UNRELEASED_CRITERION_COMMENT" not in page.data
+    assert b"86.00" not in page.data
+    summary = student_client.get("/student/results")
+    assert b"UNRELEASED_CRITERION_COMMENT" not in summary.data and b"86.00" not in summary.data
+    assert db.get_submission_for_teacher(submission_id)["mark"] == Decimal("86.00")
+
+
+@pytest.mark.parametrize("status", ["Closed", "Archived"])
+def test_mysql_non_published_definitions_are_not_returned(mysql_grading_submission, status):
+    _, assessment_id, _, _ = mysql_grading_submission
+    db.update_assessment_status(assessment_id, "Published", status)
+    assert db.get_published_rubric_by_assessment(assessment_id) is None

@@ -17,7 +17,7 @@
                             <p class="result-submitted">Submitted {{ result.submitted_at }}</p>
                         </div>
 
-                        {% if result.mark is not none %}
+                        {% if result.get('mark') is not none %}
                             <span class="assessment-status status-marked">Marked</span>
                         {% else %}
                             <span class="assessment-status status-pending">Pending</span>
@@ -27,21 +27,28 @@
                     <div class="result-content">
                         <div class="result-field result-mark">
                             <span class="result-label">Mark</span>
-                            {% if result.mark is not none %}
-                                <strong>{{ result.mark }}</strong>
+                            {% if result.get('mark') is not none %}
+                                <strong>{{ "%.2f" | format(result.mark) }}</strong>
                             {% else %}
                                 <strong>Pending</strong>
                             {% endif %}
                         </div>
 
-                        <div class="result-field result-feedback">
-                            <span class="result-label">Feedback</span>
-                            {% if result.feedback %}
-                                <p>{{ result.feedback }}</p>
-                            {% else %}
-                                <p>Feedback has not been provided yet.</p>
-                            {% endif %}
-                        </div>
+                        {% if result.get('rubric_result') %}
+                            <div class="result-field result-feedback">
+                                <span class="result-label">Feedback</span>
+                                <a class="button-link" href="{{ url_for('views.student_submission_details', submission_id=result.submission_id) }}">View Rubric Results</a>
+                            </div>
+                        {% elif not result.get('has_rubric') %}
+                            <div class="result-field result-feedback">
+                                <span class="result-label">Feedback</span>
+                                {% if result.get('feedback') %}
+                                    <p>{{ result.feedback }}</p>
+                                {% else %}
+                                    <p>Feedback has not been provided yet.</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     </div>
                 </li>
             {% endfor %}

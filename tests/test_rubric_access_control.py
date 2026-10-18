@@ -69,12 +69,12 @@ RUBRIC_MANAGEMENT_REQUESTS = [
 @pytest.mark.parametrize("method,path", RUBRIC_MANAGEMENT_REQUESTS)
 def test_ac2_ac5_student_direct_rubric_requests_preserve_existing_records(student_client, rubric_state, method, path):
     rubric_state["create"](7, "Saved criterion", "Saved description", "100")
-    before = deepcopy(rubric_state["rows"])
+    before = deepcopy((rubric_state["rows"], rubric_state["assessment"]))
     response = student_client.open(path, method=method, data={
         "title": "Unauthorized change", "description": "Unauthorized change", "weight": "50",
     })
     assert response.status_code == 403
-    assert rubric_state["rows"] == before
+    assert (rubric_state["rows"], rubric_state["assessment"]) == before
     assert b"Saved description" not in response.data
 
 
@@ -162,3 +162,28 @@ def test_ac3_unknown_submission_id_cannot_bypass_student_role_check(student_clie
     for submission_id in (9, 999):
         response = student_client.post(f"/teacher/submissions/{submission_id}/rubric-grading", json=payload())
         assert response.status_code == 403
+
+
+def test_ac1_ac5_every_rubric_and_grading_route_is_in_the_access_matrix(app):
+    covered = set(PROTECTED_REQUESTS)
+    for rule in app.url_map.iter_rules():
+        if rule.endpoint.startswith(("rubric.", "grading.")):
+            path = str(rule).replace("<int:assessment_id>", "7").replace("<int:criterion_id>", "1").replace("<int:submission_id>", "9")
+            for method in rule.methods & {"GET", "POST", "PUT", "PATCH", "DELETE"}:
+                assert (method, path) in covered, f"Missing authentication coverage for {method} {path}"
+
+
+@pytest.mark.parametrize("method", ["PUT", "PATCH", "DELETE"])
+def test_ac5_unsupported_http_methods_do_not_modify_grading(student_client, grading_state, method):
+    before = deepcopy((grading_state["grades"], grading_state["submission"]))
+    response = student_client.open("/teacher/submissions/9/rubric-grading", method=method, json=payload())
+    assert response.status_code == 405
+    assert (grading_state["grades"], grading_state["submission"]) == before
+
+
+def test_ac5_method_override_headers_do_not_bypass_role_checks(student_client, rubric_state):
+    rubric_state["create"](7, "Criterion", "Required description", "100")
+    before = deepcopy(rubric_state["rows"])
+    response = student_client.post("/teacher/assessments/7/rubric/1/delete", data={"_method": "DELETE", "role": "Teacher"},
+                                   headers={"X-HTTP-Method-Override": "DELETE", "X-Role": "Teacher"})
+    assert response.status_code == 403 and rubric_state["rows"] == before

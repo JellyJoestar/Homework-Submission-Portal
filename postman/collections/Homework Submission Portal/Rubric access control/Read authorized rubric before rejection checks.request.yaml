@@ -1,0 +1,32 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}"
+order: 1000
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.environment.unset("nfr_rubric_criterion_id");
+      pm.environment.unset("nfr_original_rubric_table");
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Authorized Teacher can read the protected rubric", function () {
+          pm.response.to.have.status(200);
+      });
+      const html = pm.response.text();
+      const criterion = html.match(/data-criterion-id="(\d+)"/);
+      const table = html.match(/<table\b[^>]*>[\s\S]*?<\/table>/);
+      pm.test("The rubric fixture exists", function () {
+          pm.expect(criterion).not.to.be.null;
+          pm.expect(table).not.to.be.null;
+      });
+      if (criterion && table) {
+          pm.environment.set("nfr_rubric_criterion_id", criterion[1]);
+          pm.environment.set("nfr_original_rubric_table", table[0].replace(/\s+/g, " "));
+      }

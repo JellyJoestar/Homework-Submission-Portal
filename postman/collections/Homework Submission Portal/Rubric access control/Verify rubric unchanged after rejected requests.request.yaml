@@ -1,0 +1,21 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}"
+order: 5000
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC2 AC5: rejected Student requests leave the rubric unchanged", function () {
+          pm.response.to.have.status(200);
+          const table = pm.response.text().match(/<table\b[^>]*>[\s\S]*?<\/table>/);
+          pm.expect(table).not.to.be.null;
+          if (table) {
+              pm.expect(table[0].replace(/\s+/g, " ")).to.equal(pm.environment.get("nfr_original_rubric_table"));
+          }
+      });

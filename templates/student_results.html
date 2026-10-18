@@ -40,9 +40,13 @@
                                 <a class="button-link" href="{{ url_for('views.student_submission_details', submission_id=result.submission_id) }}">View Rubric Results</a>
                             </div>
                         {% elif not result.get('has_rubric') %}
-                        <div class="result-field result-feedback">
-                            <span class="result-label">Feedback</span>
-                                <p>Feedback has not been provided yet.</p>
+                            <div class="result-field result-feedback">
+                                <span class="result-label">Feedback</span>
+                                {% if result.get('feedback') %}
+                                    <p>{{ result.feedback }}</p>
+                                {% else %}
+                                    <p>Feedback has not been provided yet.</p>
+                                {% endif %}
                             </div>
                         {% endif %}
                     </div>

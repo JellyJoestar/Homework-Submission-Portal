@@ -203,6 +203,7 @@ def test_teacher_sees_late_badge(teacher_client, monkeypatch):
 
 def test_student_sees_late_badge(student_client, monkeypatch):
     fake_submissions = [{"submission_id": 1,
+                         "student_id": 2,
                          "unit_code": "IFN636",
                          "assessment_title": "Test",
                          "original_filename": "report.pdf",

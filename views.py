@@ -143,6 +143,10 @@ def student_assessment_details(assessment_id):
     submission = get_submission_by_assessment_and_student(
         assessment_id, current_user.id
     )
+    try:
+        safe_submission = grading_facade.submission_metadata(submission, current_user.id) if submission else None
+    except SubmissionNotFoundError:
+        return "Submission not found.", 404
     attempt_count = submission["attempt_count"] if submission else 0
     unlimited_attempts = assessment["max_attempts"] == 0
     remaining_attempts = (
@@ -158,7 +162,7 @@ def student_assessment_details(assessment_id):
         assessment=assessment,
         rubric=grading_facade.published_rubric(assessment_id),
         resources=resources,
-        submission=grading_facade.submission_metadata(submission) if submission else None,
+        submission=safe_submission,
         attempt_count=attempt_count,
         remaining_attempts=remaining_attempts,
         unlimited_attempts=unlimited_attempts,
@@ -252,8 +256,9 @@ def student_submit_assessment(assessment_id):
 @student_required
 def student_submissions():
     student_id = current_user.id
-    submissions = [grading_facade.submission_metadata(submission)
-                   for submission in get_submissions_by_student(student_id)]
+    submissions = [grading_facade.submission_metadata(submission, student_id)
+                   for submission in get_submissions_by_student(student_id)
+                   if submission.get("student_id") == student_id]
     return render_template("student_submissions.html",submissions=submissions)
 
 @views.route("/student/results")
@@ -270,10 +275,11 @@ def student_submission_details(submission_id):
     submission = get_submission_by_id(submission_id, student_id)
     if not submission:
         return "Submission not found.", 404
-    return render_template(
-        "student_submission_details.html",
-        submission=grading_facade.student_submission(submission, student_id),
-    )
+    try:
+        safe_submission = grading_facade.student_submission(submission, student_id)
+    except SubmissionNotFoundError:
+        return "Submission not found.", 404
+    return render_template("student_submission_details.html", submission=safe_submission)
 
 @views.route("/student/assessments/<int:assessment_id>/resources/" "<int:resource_id>/download")
 @student_required

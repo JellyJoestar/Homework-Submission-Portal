@@ -18,25 +18,29 @@ class RubricGradingFacade:
         return self.repository.get_published_rubric_by_assessment(assessment_id)
 
     @staticmethod
-    def submission_metadata(submission):
+    def submission_metadata(submission, student_id):
         """Do not pass unverified grade fields to any student template."""
+        if submission.get("student_id") != student_id:
+            raise db.SubmissionNotFoundError
         return {key: value for key, value in submission.items() if key not in {
             "mark", "feedback", "rubric_result", "criterion_grades", "grades", "final_grade",
         }}
 
     def student_submission(self, submission, student_id):
+        self.submission_metadata(submission, student_id)
         snapshots = self.repository.get_student_grading_snapshots(student_id, submission["submission_id"])
-        return self._student_projection(submission, snapshots.get(submission["submission_id"]))
+        return self._student_projection(submission, snapshots.get(submission["submission_id"]), student_id)
 
     def student_results(self, submissions, student_id):
-        if not submissions:
+        owned = [submission for submission in submissions if submission.get("student_id") == student_id]
+        if not owned:
             return []
         snapshots = self.repository.get_student_grading_snapshots(student_id)
-        return [self._student_projection(submission, snapshots.get(submission["submission_id"]))
-                for submission in submissions]
+        return [self._student_projection(submission, snapshots.get(submission["submission_id"]), student_id)
+                for submission in owned]
 
-    def _student_projection(self, submission, snapshot):
-        safe = self.submission_metadata(submission)
+    def _student_projection(self, submission, snapshot, student_id):
+        safe = self.submission_metadata(submission, student_id)
         if snapshot is None or snapshot["assessment_status"] not in {"Published", "Closed", "Archived"}:
             return safe
         if not snapshot["criteria"]:

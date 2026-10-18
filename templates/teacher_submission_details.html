@@ -63,6 +63,9 @@
 
     <hr>
 
+    {% if rubric.criteria %}
+        {% include "rubric_grading.html" %}
+    {% else %}
     <h2>Mark and Feedback</h2>
 
     <form class="mark-feedback-form"
@@ -99,6 +102,7 @@
             </button>
         </div>
     </form>
+    {% endif %}
 
     <p class="page-action">
         <a class="button-link secondary-link" href="{{ url_for(

@@ -22,6 +22,8 @@ values:
     value: ''
   - key: teacher_csrf_token
     value: ''
+  - key: ifn636_107_grading_criterion_id
+    value: ''
   - key: student_session
     value: ''
   - key: logged_out_session

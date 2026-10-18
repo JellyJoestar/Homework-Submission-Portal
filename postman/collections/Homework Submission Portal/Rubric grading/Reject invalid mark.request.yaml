@@ -1,0 +1,25 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}/rubric-grading"
+order: 1000
+headers:
+  Cookie: session={{teacher_session}}
+body:
+  type: urlencoded
+  content:
+    criterion_id: "{{ifn636_107_grading_criterion_id}}"
+    "mark_{{ifn636_107_grading_criterion_id}}": "100.01"
+    csrf_token: "{{teacher_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("An out-of-range mark is rejected and the stored zero result remains", function () {
+          pm.response.to.have.status(400);
+          const html = pm.response.text().replace(/\s+/g, " ");
+          pm.expect(html).to.include("Mark must be between 0 and 100.");
+          pm.expect(html).to.include("Final grade:</strong> 0.00");
+      });

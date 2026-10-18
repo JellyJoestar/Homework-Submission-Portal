@@ -35,16 +35,15 @@
                         </div>
 
                         {% if result.get('rubric_result') %}
-                            <a class="button-link" href="{{ url_for('views.student_submission_details', submission_id=result.submission_id) }}">View Rubric Results</a>
+                            <div class="result-field result-feedback">
+                                <span class="result-label">Feedback</span>
+                                <a class="button-link" href="{{ url_for('views.student_submission_details', submission_id=result.submission_id) }}">View Rubric Results</a>
+                            </div>
                         {% elif not result.get('has_rubric') %}
-                        <div class="result-field result-feedback">
+                            <div class="result-field result-feedback">
                             <span class="result-label">Feedback</span>
-                            {% if result.feedback %}
-                                <p>{{ result.feedback }}</p>
-                            {% else %}
                                 <p>Feedback has not been provided yet.</p>
-                            {% endif %}
-                        </div>
+                            </div>
                         {% endif %}
                     </div>
                 </li>

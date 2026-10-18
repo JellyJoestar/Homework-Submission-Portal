@@ -22,7 +22,15 @@ login_manager.login_message_category = "warning"
 @login_manager.user_loader
 def load_user(user_id: str):
     # Called on every request to rebuild current_user from the session cookie
-    return get_user_by_id(int(user_id))
+    if not isinstance(user_id, str) or not user_id.isascii() or not user_id.isdecimal():
+        return None
+    try:
+        parsed_user_id = int(user_id)
+    except ValueError:
+        return None
+    if parsed_user_id < 1:
+        return None
+    return get_user_by_id(parsed_user_id)
 
 
 @auth.after_app_request

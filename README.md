@@ -280,6 +280,19 @@ See [the student rubric implementation and deployment guide](docs/IFN636-128-stu
 for AC mapping, the existing Facade/Composition design and verification. There
 is no new migration; both preceding rubric migrations must already be applied.
 
+### Rubric and Grading Access Control (NFR-RUB-01)
+
+Rubric configuration and grading management remain restricted to authenticated
+Teachers. Students can access only their own private submission/grading records
+and previews. Ownership is verified in the existing SQL predicates and again
+before exposing returned metadata or opening a file. Student lists discard
+unowned records, and client-supplied role/user fields cannot override the signed
+session identity.
+
+See [the access-control implementation and verification guide](docs/IFN636-134-rubric-access-control.md)
+for AC mappings, retained controls, session handling, the direct HTTP test matrix
+and deployment checks. No new migration or interface content is required.
+
 ## 6. File Upload Support
 
 Supporting resources and Student submissions support:
@@ -406,7 +419,8 @@ Homework-Submission-Portal/
 ├── docs/
 │   ├── IFN636-113-rubric-criteria.md
 │   ├── IFN636-121-rubric-grading.md
-│   └── IFN636-128-student-rubric-results.md
+│   ├── IFN636-128-student-rubric-results.md
+│   └── IFN636-134-rubric-access-control.md
 │
 ├── database/
 │   └── homework-portal.sql

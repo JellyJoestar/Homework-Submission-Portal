@@ -1,0 +1,20 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}"
+order: 5100
+headers:
+  Cookie: session={{teacher_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC3 AC5: rejected Student requests preserve stored grading", function () {
+          pm.response.to.have.status(200);
+          const html = pm.response.text().replace(/\s+/g, " ");
+          pm.expect(html).to.include('value="84.50"');
+          pm.expect(html).to.include(">Revised criterion comment</textarea>");
+          pm.expect(html).not.to.include(">Unauthorized grading</textarea>");
+      });

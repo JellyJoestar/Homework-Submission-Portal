@@ -33,7 +33,7 @@ def preview_submission_file(submission):
 def student_preview_submission(submission_id):
     # Only finds the submission if it belongs to the logged-in student
     submission = get_submission_by_id(submission_id, current_user.id)
-    if not submission:
+    if not submission or submission.get("student_id") != current_user.id:
         return "Submission not found.", 404
     return preview_submission_file(submission)
 

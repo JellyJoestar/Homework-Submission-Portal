@@ -1,0 +1,24 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}/rubric"
+order: 2000
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: urlencoded
+  content:
+    "title": "Unauthorized"
+    "description": "Unauthorized"
+    "weight": "100"
+    "role": "Teacher"
+    "csrf_token": "{{student_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC2 AC5: Student cannot create a rubric criterion", function () {
+          pm.response.to.have.status(403);
+      });

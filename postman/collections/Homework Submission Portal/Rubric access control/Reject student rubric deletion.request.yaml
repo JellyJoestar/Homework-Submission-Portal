@@ -1,0 +1,20 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/teacher/assessments/{{ifn636_limit_id_three}}/rubric/{{nfr_rubric_criterion_id}}/delete"
+order: 2200
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: urlencoded
+  content:
+    "csrf_token": "{{student_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC2 AC5: Student cannot delete a rubric criterion", function () {
+          pm.response.to.have.status(403);
+      });

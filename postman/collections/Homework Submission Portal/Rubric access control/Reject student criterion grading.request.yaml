@@ -1,0 +1,25 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}/rubric-grading"
+order: 3000
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: urlencoded
+  content:
+    "criterion_id": "{{ifn636_107_grading_criterion_id}}"
+    "mark_{{ifn636_107_grading_criterion_id}}": "100"
+    "comment_{{ifn636_107_grading_criterion_id}}": "Unauthorized grading"
+    "final_grade": "100"
+    "role": "Teacher"
+    "csrf_token": "{{student_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC3 AC5: Student cannot modify criterion grades or calculated results", function () {
+          pm.response.to.have.status(403);
+      });

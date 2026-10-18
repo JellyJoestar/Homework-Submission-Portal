@@ -1,0 +1,4 @@
+$kind: collection
+name: Rubric access control
+description: NFR-RUB-01 direct HTTP checks. Run the full collection so Auth, Attempt Limits, Student 2 and grading fixtures exist.
+order: 4900

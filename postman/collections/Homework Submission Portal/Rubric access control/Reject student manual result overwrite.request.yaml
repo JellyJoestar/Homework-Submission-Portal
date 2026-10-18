@@ -1,0 +1,22 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/teacher/submissions/{{ifn636_107_submission_id_graded}}/mark-feedback"
+order: 3100
+headers:
+  Cookie: session={{student_session}}
+body:
+  type: urlencoded
+  content:
+    "mark": "100"
+    "feedback": "Unauthorized overwrite"
+    "csrf_token": "{{student_csrf_token}}"
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC3 AC5: Student cannot modify results using the legacy endpoint", function () {
+          pm.response.to.have.status(403);
+      });

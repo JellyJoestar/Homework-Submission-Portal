@@ -1,0 +1,17 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/student/submissions/{{ifn636_107_submission_id_graded}}/preview?student_id=2"
+order: 4100
+headers:
+  Cookie: session={{student2_session}}
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC4: another Student cannot obtain the submitted file", function () {
+          pm.response.to.have.status(404);
+          pm.expect(pm.response.text()).not.to.include("%PDF");
+      });

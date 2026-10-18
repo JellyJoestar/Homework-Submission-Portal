@@ -26,6 +26,12 @@ values:
     value: ''
   - key: student_session
     value: ''
+  - key: student_csrf_token
+    value: ''
+  - key: nfr_rubric_criterion_id
+    value: ''
+  - key: nfr_original_rubric_table
+    value: ''
   - key: logged_out_session
     value: ''
   - key: student2_session

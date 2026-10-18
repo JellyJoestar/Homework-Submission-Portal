@@ -1,0 +1,17 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/student/submissions/{{ifn636_107_submission_id_graded}}"
+order: 1200
+settings:
+  followRedirects: false
+  disableCookies: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("AC1: an anonymous request is redirected without protected information", function () {
+          pm.response.to.have.status(302);
+          pm.expect(pm.response.headers.get("Location")).to.include("/login");
+          pm.expect(pm.response.text()).not.to.include('id="student-result-heading"');
+          pm.expect(pm.response.text()).not.to.include("Revised criterion comment");
+      });

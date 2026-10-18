@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from threading import Event
 from uuid import uuid4
+from pathlib import Path
 
 import pytest
 
@@ -327,3 +328,64 @@ def test_mysql_non_published_definitions_are_not_returned(mysql_grading_submissi
     _, assessment_id, _, _ = mysql_grading_submission
     db.update_assessment_status(assessment_id, "Published", status)
     assert db.get_published_rubric_by_assessment(assessment_id) is None
+
+
+@pytest.mark.parametrize("operation", ["create", "edit", "delete"])
+def test_mysql_nfr_ac2_ac5_student_cannot_mutate_draft_rubric(student_client, mysql_assessment, operation):
+    assessment_id = mysql_assessment()
+    criterion_id = db.create_rubric_criterion(assessment_id, "Protected criterion", "Protected description", "100")
+    before = db.get_rubric_by_assessment(assessment_id).criteria
+    path = f"/teacher/assessments/{assessment_id}/rubric"
+    if operation != "create":
+        path += f"/{criterion_id}/{operation}"
+    response = student_client.post(path, data={"title": "Unauthorized", "description": "Unauthorized", "weight": "50"})
+    assert response.status_code == 403
+    assert db.get_rubric_by_assessment(assessment_id).criteria == before
+
+
+@pytest.mark.parametrize("encoding", ["json", "form", "legacy"])
+def test_mysql_nfr_ac3_ac5_student_cannot_change_stored_grading(student_client, mysql_grading_submission, encoding):
+    submission_id, _, _, criteria = mysql_grading_submission
+    grading_facade.save(submission_id, mysql_grade_rows(criteria, comment="Protected comment"))
+    before = db.get_criterion_grades(submission_id)
+    path = f"/teacher/submissions/{submission_id}/rubric-grading"
+    if encoding == "json":
+        response = student_client.post(path, json={"grades": mysql_grade_rows(criteria, "100", "100", "Unauthorized")})
+    elif encoding == "form":
+        response = student_client.post(path, data={"criterion_id": list(map(str, criteria)),
+            f"mark_{criteria[0]}": "100", f"mark_{criteria[1]}": "100", f"comment_{criteria[0]}": "Unauthorized"})
+    else:
+        response = student_client.post(f"/teacher/submissions/{submission_id}/mark-feedback", data={"mark": "100", "feedback": "Unauthorized"})
+    assert response.status_code == 403
+    assert db.get_criterion_grades(submission_id) == before
+    assert db.get_submission_for_teacher(submission_id)["mark"] == Decimal("86.00")
+
+
+def test_mysql_nfr_ac4_another_student_cannot_read_complete_result_or_file(app, users, student_client, mysql_grading_submission, monkeypatch, tmp_path):
+    from conftest import login_as
+    from preview import routes as preview_routes
+    submission_id, _, owner_id, criteria = mysql_grading_submission
+    grading_facade.save(submission_id, mysql_grade_rows(criteria, comment="PRIVATE_DATABASE_COMMENT"))
+    connection = db.get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT user_id FROM users WHERE role = 'Student' AND user_id <> %s ORDER BY user_id LIMIT 1", (owner_id,))
+        other_id = cursor.fetchone()[0]
+    finally:
+        cursor.close()
+        connection.close()
+    users[other_id] = db.get_user_by_id(other_id)
+    other_client = app.test_client()
+    login_as(other_client, other_id)
+    monkeypatch.setattr(preview_routes, "SUBMISSION_UPLOAD_FOLDER", str(tmp_path))
+    (tmp_path / "integration.pdf").write_bytes((Path(__file__).parents[1] / "files" / "report.pdf").read_bytes())
+    detail = f"/student/submissions/{submission_id}"
+    own = student_client.get(detail)
+    assert own.status_code == 200 and b"PRIVATE_DATABASE_COMMENT" in own.data
+    assert student_client.get(detail + "/preview").status_code == 200
+    for path in (detail, detail + "/preview"):
+        blocked = other_client.get(path + f"?student_id={owner_id}")
+        assert blocked.status_code == 404
+        assert b"PRIVATE_DATABASE_COMMENT" not in blocked.data and b"%PDF" not in blocked.data
+    assert db.get_submission_by_id(submission_id, other_id) is None
+    assert db.get_student_grading_snapshots(other_id, submission_id) == {}
